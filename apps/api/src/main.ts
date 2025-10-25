@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { Logger, LoggerErrorInterceptor, PinoLogger } from 'nestjs-pino';
 import {
   FastifyAdapter,
@@ -49,7 +50,8 @@ async function bootstrap() {
 
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
-  const port = process.env.PORT || 3000;
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('PORT', 3000);
   await app.listen(port);
 
   const logger = app.get(PinoLogger);
