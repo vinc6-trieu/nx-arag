@@ -1,5 +1,5 @@
-import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { Logger, LoggerErrorInterceptor, PinoLogger } from 'nestjs-pino';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -28,10 +28,15 @@ async function bootstrap() {
     },
   );
 
+  app.useLogger(app.get(Logger));
+
   // Allow cross-origin requests from the frontend
   app.enableCors();
 
-  app.useGlobalInterceptors(new ApiResponseInterceptor());
+  app.useGlobalInterceptors(
+    new LoggerErrorInterceptor(),
+    new ApiResponseInterceptor(),
+  );
 
   await app.register(underPressure, {
     exposeStatusRoute: {
@@ -46,7 +51,9 @@ async function bootstrap() {
   app.setGlobalPrefix(globalPrefix);
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  Logger.log(
+
+  const logger = app.get(PinoLogger);
+  logger.info(
     `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
   );
 }
