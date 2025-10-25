@@ -1,5 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger, LoggerErrorInterceptor, PinoLogger } from 'nestjs-pino';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
+import underPressure from '@fastify/under-pressure';
 import { AppModule } from './app.module.clean';
 
 import { config } from 'dotenv';
@@ -15,9 +20,13 @@ const envPath =
 config({ path: envPath });
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    bufferLogs: true,
-  });
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter(),
+    {
+      bufferLogs: true,
+    },
+  );
 
   app.useLogger(app.get(Logger));
 
@@ -28,6 +37,15 @@ async function bootstrap() {
     new LoggerErrorInterceptor(),
     new ApiResponseInterceptor(),
   );
+
+  await app.register(underPressure, {
+    exposeStatusRoute: {
+      url: '/api/health/status',
+    },
+    healthCheck: async () => ({
+      status: 'ok',
+    }),
+  });
 
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
