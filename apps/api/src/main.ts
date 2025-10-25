@@ -6,6 +6,7 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import underPressure from '@fastify/under-pressure';
+import helmet from '@fastify/helmet';
 import { AppModule } from './app.module.clean';
 
 import { config } from 'dotenv';
@@ -30,6 +31,11 @@ async function bootstrap() {
   );
 
   app.useLogger(app.get(Logger));
+
+  await app.register(helmet, {
+    // Disable CSP if necessary for tooling like Swagger; adjust as needed.
+    contentSecurityPolicy: false,
+  });
 
   // Allow cross-origin requests from the frontend
   app.enableCors();
