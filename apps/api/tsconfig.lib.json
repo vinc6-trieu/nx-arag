@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "../../",
+    "emitDeclarationOnly": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
+    "target": "es2021",
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": [
+    "casl/**/*.ts",
+    "src/**/*.ts",
+    "prisma/**/*.ts",
+    "*/*.d.ts",
+    "../../packages/utils/src/**/*.ts"
+  ],
+  "references": []
+}

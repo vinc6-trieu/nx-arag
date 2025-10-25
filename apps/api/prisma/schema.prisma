@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  name        String?
+  password    String?
+  passwordUpdated Boolean @default(false)
+  googleId    String?  @unique
+  azureAdId   String?  @unique
+  phone       String?
+  campusCode  String?
+  avatar      String?
+  roles       String[]   @default([])
+  origin      String?
+  student     StudentProfile?
+  teacher     TeacherProfile?
+  dateOfBirth String?
+  parent      ParentProfile?
+  organization Organization? @relation("OrganizationUsers", fields: [organizationId], references: [id])
+  organizationId String?
+  createdAt   DateTime @default(now())
+}
+
+model StudentProfile {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @unique
+  studentCode String?
+  grade       String?
+  class       String?
+  schoolLevel String?
+  createdAt   DateTime @default(now())
+}
+
+model TeacherProfile {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  homeroomClasses  String[]           @default([])
+  teachingGrades  String[]           @default([])
+  userId    String   @unique
+  createdAt DateTime @default(now())
+}
+
+model ParentProfile {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  domain      String?
+  users       User[]   @relation("OrganizationUsers")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "files": [],
+  "include": [],
+  "compilerOptions": {
+    "composite": true,
+    "incremental": true,
+    "outDir": "out-tsc",
+    "tsBuildInfoFile": "out-tsc/shared.tsbuildinfo"
+  },
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    }
+  ]
+}
