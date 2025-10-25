@@ -1,5 +1,6 @@
 import { AadBearerStrategy } from '@lib/utils';
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { CaslModule } from 'nest-casl';
 import { LoggerModule } from 'nestjs-pino';
 import { UserHook } from '../casl/hooks';
@@ -8,10 +9,15 @@ import { DomainModule } from './domain/domain.module';
 import { UserRoles } from './domain/entities/user.entity';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { InterfaceModule } from './interface/interface.module';
+import { envValidationSchema } from './config/env.validation';
 
 @Module({
   imports: [
     // Clean Architecture Layers
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: envValidationSchema,
+    }),
     DomainModule,
     InfrastructureModule,
     ApplicationModule,

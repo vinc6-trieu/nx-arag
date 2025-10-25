@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import { AADProfileDto } from '../../application/dtos/auth.dto';
 
@@ -6,15 +7,17 @@ import { AADProfileDto } from '../../application/dtos/auth.dto';
 export class ExternalAuthService {
   private googleClient: OAuth2Client;
 
-  constructor() {
-    this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  constructor(private readonly configService: ConfigService) {
+    this.googleClient = new OAuth2Client(
+      this.configService.getOrThrow<string>('GOOGLE_CLIENT_ID'),
+    );
   }
 
   async verifyGoogleToken(idToken: string): Promise<AADProfileDto> {
     try {
       const ticket = await this.googleClient.verifyIdToken({
         idToken,
-        audience: process.env.GOOGLE_CLIENT_ID,
+        audience: this.configService.getOrThrow<string>('GOOGLE_CLIENT_ID'),
       });
 
       const payload = ticket.getPayload();

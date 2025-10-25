@@ -2,6 +2,7 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "jest.preset.js": ["{workspaceRoot}/jest.preset.js"],
     "production": [
       "default",
       "!{projectRoot}/.eslintrc.json",
