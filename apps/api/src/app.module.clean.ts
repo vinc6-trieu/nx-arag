@@ -1,10 +1,10 @@
-import { AadBearerStrategy } from '@lib/utils';
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CaslModule } from 'nest-casl';
 import { LoggerModule } from 'nestjs-pino';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { RequestIdMiddleware, IdempotencyInterceptor, AadBearerStrategy } from '@lib/utils';
 import { UserHook } from '../casl/hooks';
 import { ApplicationModule } from './application/application.module';
 import { DomainModule } from './domain/domain.module';
@@ -66,6 +66,14 @@ import { RateLimitGuard } from './interface/guards/rate-limit.guard';
       provide: APP_GUARD,
       useClass: RateLimitGuard,
     },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: IdempotencyInterceptor,
+    },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}
