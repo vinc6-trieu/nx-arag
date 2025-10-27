@@ -13,6 +13,7 @@ import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { InterfaceModule } from './interface/interface.module';
 import { envValidationSchema } from './config/env.validation';
 import { RateLimitGuard } from './interface/guards/rate-limit.guard';
+import { DatadogTracerShutdown } from './instrumentation/datadog-tracer.shutdown';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { RateLimitGuard } from './interface/guards/rate-limit.guard';
   ],
   providers: [
     AadBearerStrategy,
+    DatadogTracerShutdown,
     {
       provide: APP_GUARD,
       useClass: RateLimitGuard,
