@@ -1,0 +1,26 @@
+{
+  "name": "@nx-arag/observability",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./datadog-tracer": {
+      "types": "./src/lib/datadog-tracer.ts",
+      "import": "./src/lib/datadog-tracer.ts",
+      "default": "./src/lib/datadog-tracer.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "nx": {
+    "name": "observability"
+  },
+  "dependencies": {
+    "dd-trace": "^5.27.0"
+  }
+}
