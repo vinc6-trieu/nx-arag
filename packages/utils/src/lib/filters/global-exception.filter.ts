@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { datadogTracer } from '@lib/observability';
 import { FastifyReply } from 'fastify';
 import { ApiErrorResponse } from '../common/api-response.types';
 
@@ -35,6 +36,25 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       path: request.url,
       timestamp: new Date().toISOString(),
     };
+
+    const span = datadogTracer.scope().active();
+
+    if (span) {
+      span.setTag('error', exception as any);
+
+      const errorMessage =
+        exception instanceof Error
+          ? exception.message
+          : typeof exception === 'string'
+            ? exception
+            : message;
+
+      span.setTag('error.message', errorMessage);
+
+      if (exception instanceof Error && exception.stack) {
+        span.setTag('error.stack', exception.stack);
+      }
+    }
 
     if (exception instanceof Error) {
       this.logger.error(exception.message, exception.stack);
