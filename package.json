@@ -54,6 +54,7 @@
     "exceljs": "^4.4.0",
     "firebase": "^11.8.1",
     "google-auth-library": "^9.15.1",
+    "dd-trace": "^5.27.0",
     "joi": "^17.13.3",
     "ioredis": "^5.7.0",
     "jsonwebtoken": "^9.0.2",
@@ -78,6 +79,7 @@
   "devDependencies": {
     "@eslint/compat": "^1.1.1",
     "@eslint/eslintrc": "^2.1.1",
+    "@types/dd-trace": "^5.3.6",
     "@eslint/js": "^9.8.0",
     "@nestjs/schematics": "11.0.5",
     "@nestjs/testing": "11.1.0",

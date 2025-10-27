@@ -1,3 +1,5 @@
+import './instrumentation/datadog-tracer';
+
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { Logger, LoggerErrorInterceptor, PinoLogger } from 'nestjs-pino';
@@ -31,6 +33,8 @@ async function bootstrap() {
   );
 
   app.useLogger(app.get(Logger));
+
+  app.enableShutdownHooks();
 
   await app.register(helmet, {
     // Disable CSP if necessary for tooling like Swagger; adjust as needed.
