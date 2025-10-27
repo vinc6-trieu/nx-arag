@@ -1,5 +1,7 @@
 export * from './lib/common/remove-accent.util';
+export * from './lib/common/api-response.types';
 export * from './lib/decorators/authorization.decorator';
+export * from './lib/filters/global-exception.filter';
 export * from './lib/interceptors/api-response.interceptor';
 export * from './lib/security/guards';
 export * from './lib/security/strategies';

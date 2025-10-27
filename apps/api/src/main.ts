@@ -10,7 +10,7 @@ import helmet from '@fastify/helmet';
 import { AppModule } from './app.module.clean';
 
 import { config } from 'dotenv';
-import { ApiResponseInterceptor } from 'packages/utils/src';
+import { ApiResponseInterceptor, GlobalExceptionFilter } from 'packages/utils/src';
 import { join } from 'path';
 
 // Automatically load correct .env file
@@ -44,6 +44,8 @@ async function bootstrap() {
     new LoggerErrorInterceptor(),
     new ApiResponseInterceptor(),
   );
+
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   await app.register(underPressure, {
     exposeStatusRoute: {
