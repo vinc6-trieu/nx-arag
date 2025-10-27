@@ -1,4 +1,5 @@
 import './instrumentation/datadog-tracer';
+import './instrumentation/datadog-metrics';
 
 import helmet from '@fastify/helmet';
 import underPressure from '@fastify/under-pressure';
