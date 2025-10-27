@@ -36,7 +36,7 @@ model StudentProfile {
   userId      String   @unique
   studentCode String?
   grade       String?
-  class       String?
+  className   String?
   schoolLevel String?
   createdAt   DateTime @default(now())
 }
