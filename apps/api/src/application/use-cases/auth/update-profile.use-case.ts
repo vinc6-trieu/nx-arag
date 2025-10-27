@@ -1,12 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { User } from '../../../domain/entities/user.entity';
 import { AuthDomainService } from '../../../domain/services/auth.domain.service';
 import { UserRepositoryImpl } from '../../../infrastructure/repositories/user.repository.impl';
 import { UpdateProfileRequestDto, UserDto } from '../../dtos/auth.dto';
+import { userProfileCacheKey } from '../../constants/cache-keys';
 
 @Injectable()
 export class UpdateProfileUseCase {
-  constructor(private readonly userRepository: UserRepositoryImpl) {}
+  constructor(
+    private readonly userRepository: UserRepositoryImpl,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+  ) {}
 
   async execute(
     userId: string,
@@ -45,7 +51,12 @@ export class UpdateProfileUseCase {
       // For now, we'll assume the repository handles profile updates
     }
 
-    return this.mapToUserDto(updatedUser);
+    const updatedProfile = this.mapToUserDto(updatedUser);
+
+    await this.cacheManager.del(userProfileCacheKey(userId));
+    await this.cacheManager.set(userProfileCacheKey(userId), updatedProfile);
+
+    return updatedProfile;
   }
 
   private mapToUserDto(user: User): UserDto {
