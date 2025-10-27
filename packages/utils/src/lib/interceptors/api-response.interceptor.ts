@@ -6,25 +6,16 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-
-export interface APIResponse<T> {
-  code: string;
-  data: T;
-  duration: string;
-  error: boolean;
-  message: string;
-  meta: any;
-  path: string;
-}
+import { ApiResponseEnvelope } from '../common/api-response.types';
 
 @Injectable()
 export class ApiResponseInterceptor<T>
-  implements NestInterceptor<T, APIResponse<T>>
+  implements NestInterceptor<T, ApiResponseEnvelope<T>>
 {
   intercept(
     context: ExecutionContext,
     next: CallHandler<T>,
-  ): Observable<APIResponse<T>> {
+  ): Observable<ApiResponseEnvelope<T>> {
     const now = Date.now();
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse();
@@ -35,9 +26,13 @@ export class ApiResponseInterceptor<T>
         data,
         duration: `${Date.now() - now}ms`,
         error: response.statusCode >= 400,
-        message: response.statusMessage ?? 'OK',
+        message:
+          response.statusMessage ??
+          response.raw?.statusMessage ??
+          'OK',
         meta: undefined,
         path: request.url,
+        timestamp: new Date().toISOString(),
       })),
     );
   }
