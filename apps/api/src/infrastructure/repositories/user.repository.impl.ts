@@ -12,7 +12,7 @@ export class UserRepositoryImpl implements UserRepository {
       where: { id },
       include: {
         organization: true,
-        sensitiveInfo: true,
+        credential: true,
       },
     });
 
@@ -24,7 +24,7 @@ export class UserRepositoryImpl implements UserRepository {
       where: { email },
       include: {
         organization: true,
-        sensitiveInfo: true,
+        credential: true,
       },
     });
 
@@ -34,13 +34,13 @@ export class UserRepositoryImpl implements UserRepository {
   async findByGoogleId(googleId: string): Promise<User | null> {
     const user = await this.prisma.user.findFirst({
       where: {
-        sensitiveInfo: {
+        credential: {
           googleId,
         },
       },
       include: {
         organization: true,
-        sensitiveInfo: true,
+        credential: true,
       },
     });
 
@@ -50,13 +50,13 @@ export class UserRepositoryImpl implements UserRepository {
   async findByAzureAdId(azureAdId: string): Promise<User | null> {
     const user = await this.prisma.user.findFirst({
       where: {
-        sensitiveInfo: {
+        credential: {
           azureAdId,
         },
       },
       include: {
         organization: true,
-        sensitiveInfo: true,
+        credential: true,
       },
     });
 
@@ -64,36 +64,36 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async save(user: User): Promise<User> {
-    const sensitiveInfoCreate: Record<string, unknown> = {
+    const credentialCreate: Record<string, unknown> = {
       passwordUpdated: user.passwordUpdated ?? false,
     };
 
     if (user.password !== undefined) {
-      sensitiveInfoCreate.password = user.password;
+      credentialCreate.password = user.password;
     }
 
     if (user.googleId !== undefined) {
-      sensitiveInfoCreate.googleId = user.googleId;
+      credentialCreate.googleId = user.googleId;
     }
 
     if (user.azureAdId !== undefined) {
-      sensitiveInfoCreate.azureAdId = user.azureAdId;
+      credentialCreate.azureAdId = user.azureAdId;
     }
 
     if (user.phone !== undefined) {
-      sensitiveInfoCreate.phone = user.phone;
+      credentialCreate.phone = user.phone;
     }
 
     if (user.avatar !== undefined) {
-      sensitiveInfoCreate.avatar = user.avatar;
+      credentialCreate.avatar = user.avatar;
     }
 
     if (user.origin !== undefined) {
-      sensitiveInfoCreate.origin = user.origin;
+      credentialCreate.origin = user.origin;
     }
 
     if (user.dateOfBirth !== undefined) {
-      sensitiveInfoCreate.dateOfBirth = user.dateOfBirth;
+      credentialCreate.dateOfBirth = user.dateOfBirth;
     }
 
     const createdUser = await this.prisma.user.create({
@@ -102,13 +102,13 @@ export class UserRepositoryImpl implements UserRepository {
         name: user.name,
         roles: user.roles,
         organizationId: user.organizationId,
-        sensitiveInfo: {
-          create: sensitiveInfoCreate,
+        credential: {
+          create: credentialCreate,
         },
       },
       include: {
         organization: true,
-        sensitiveInfo: true,
+        credential: true,
       },
     });
 
@@ -130,54 +130,54 @@ export class UserRepositoryImpl implements UserRepository {
       userUpdateData.organizationId = userData.organizationId;
     }
 
-    const sensitiveInfoUpdate: Record<string, unknown> = {};
+    const credentialUpdate: Record<string, unknown> = {};
 
     if (userData.password !== undefined) {
-      sensitiveInfoUpdate.password = userData.password;
+      credentialUpdate.password = userData.password;
     }
 
     if (userData.passwordUpdated !== undefined) {
-      sensitiveInfoUpdate.passwordUpdated = userData.passwordUpdated;
+      credentialUpdate.passwordUpdated = userData.passwordUpdated;
     }
 
     if (userData.googleId !== undefined) {
-      sensitiveInfoUpdate.googleId = userData.googleId;
+      credentialUpdate.googleId = userData.googleId;
     }
 
     if (userData.azureAdId !== undefined) {
-      sensitiveInfoUpdate.azureAdId = userData.azureAdId;
+      credentialUpdate.azureAdId = userData.azureAdId;
     }
 
     if (userData.phone !== undefined) {
-      sensitiveInfoUpdate.phone = userData.phone;
+      credentialUpdate.phone = userData.phone;
     }
 
     if (userData.avatar !== undefined) {
-      sensitiveInfoUpdate.avatar = userData.avatar;
+      credentialUpdate.avatar = userData.avatar;
     }
 
     if (userData.origin !== undefined) {
-      sensitiveInfoUpdate.origin = userData.origin;
+      credentialUpdate.origin = userData.origin;
     }
 
     if (userData.dateOfBirth !== undefined) {
-      sensitiveInfoUpdate.dateOfBirth = userData.dateOfBirth;
+      credentialUpdate.dateOfBirth = userData.dateOfBirth;
     }
 
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: {
         ...userUpdateData,
-        ...(Object.keys(sensitiveInfoUpdate).length > 0
+        ...(Object.keys(credentialUpdate).length > 0
           ? {
-              sensitiveInfo: {
+              credential: {
                 upsert: {
-                  update: sensitiveInfoUpdate,
+                  update: credentialUpdate,
                   create: {
                     passwordUpdated:
-                      (sensitiveInfoUpdate.passwordUpdated as boolean | undefined) ??
+                      (credentialUpdate.passwordUpdated as boolean | undefined) ??
                       false,
-                    ...sensitiveInfoUpdate,
+                    ...credentialUpdate,
                   },
                 },
               },
@@ -186,7 +186,7 @@ export class UserRepositoryImpl implements UserRepository {
       },
       include: {
         organization: true,
-        sensitiveInfo: true,
+        credential: true,
       },
     });
 
@@ -222,7 +222,7 @@ export class UserRepositoryImpl implements UserRepository {
       where: and.length > 0 ? { AND: and } : undefined,
       include: {
         organization: true,
-        sensitiveInfo: true,
+        credential: true,
       },
       skip,
       take,
@@ -263,21 +263,21 @@ export class UserRepositoryImpl implements UserRepository {
         )
       : undefined;
 
-    const sensitiveInfo = user.sensitiveInfo ?? {};
+    const credential = user.credential ?? {};
 
     return new User(
       user.id,
       user.email,
       user.name,
-      sensitiveInfo.password,
-      sensitiveInfo.passwordUpdated ?? false,
-      sensitiveInfo.googleId,
-      sensitiveInfo.azureAdId,
-      sensitiveInfo.phone,
-      sensitiveInfo.avatar,
+      credential.password,
+      credential.passwordUpdated ?? false,
+      credential.googleId,
+      credential.azureAdId,
+      credential.phone,
+      credential.avatar,
       user.roles,
-      sensitiveInfo.origin,
-      sensitiveInfo.dateOfBirth,
+      credential.origin,
+      credential.dateOfBirth,
       user.organizationId,
       user.createdAt,
       organization,

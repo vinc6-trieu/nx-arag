@@ -47,12 +47,6 @@ export class RegisterUseCase {
     // Save user
     const savedUser = await this.userRepository.save(user);
 
-    // Create student profile if studentCode is provided
-    if (request.studentCode) {
-      // This would be handled by the repository or a separate service
-      // For now, we'll assume the repository handles profile creation
-    }
-
     // Generate tokens
     const accessToken = this.jwtService.sign({
       sub: savedUser.id,

@@ -40,17 +40,6 @@ export class UpdateProfileUseCase {
       roles: request.roles,
     });
 
-    // Handle student profile updates if needed
-    if (
-      request.studentCode ||
-      request.grade ||
-      request.className ||
-      request.schoolLevel
-    ) {
-      // This would be handled by the repository or a separate service
-      // For now, we'll assume the repository handles profile updates
-    }
-
     const updatedProfile = this.mapToUserDto(updatedUser);
 
     await this.cacheManager.del(userProfileCacheKey(userId));
