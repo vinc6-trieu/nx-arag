@@ -21,10 +21,6 @@ export class RegisterRequestDto {
     public readonly name?: string,
     public readonly phone?: string,
     public readonly roles?: string[],
-    public readonly studentCode?: string,
-    public readonly grade?: string,
-    public readonly className?: string,
-    public readonly schoolLevel?: string,
     public readonly origin?: string,
   ) {}
 }
@@ -34,10 +30,6 @@ export class UpdateProfileRequestDto {
     public readonly name?: string,
     public readonly phone?: string,
     public readonly avatar?: string,
-    public readonly studentCode?: string,
-    public readonly grade?: string,
-    public readonly className?: string,
-    public readonly schoolLevel?: string,
     public readonly roles?: string[],
   ) {}
 }
@@ -58,10 +50,7 @@ export class UserDto {
     public readonly phone?: string,
     public readonly avatar?: string,
     public readonly origin?: string,
-    public readonly campusCode?: string,
     public readonly organization?: any,
-    public readonly teacher?: any,
-    public readonly student?: any,
   ) {}
 }
 

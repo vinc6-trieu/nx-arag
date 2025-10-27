@@ -36,7 +36,6 @@ export class RegisterUseCase {
       undefined, // googleId
       undefined, // azureAdId
       request.phone,
-      undefined, // campusCode
       undefined, // avatar
       request.roles || ['student'], // default role
       request.origin,
@@ -47,12 +46,6 @@ export class RegisterUseCase {
 
     // Save user
     const savedUser = await this.userRepository.save(user);
-
-    // Create student profile if studentCode is provided
-    if (request.studentCode) {
-      // This would be handled by the repository or a separate service
-      // For now, we'll assume the repository handles profile creation
-    }
 
     // Generate tokens
     const accessToken = this.jwtService.sign({
@@ -80,10 +73,7 @@ export class RegisterUseCase {
       user.phone,
       user.avatar,
       user.origin,
-      user.campusCode,
       user.organization,
-      user.teacher,
-      user.student,
     );
   }
 }

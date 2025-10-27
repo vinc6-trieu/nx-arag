@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_DIRECT_URL")
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  domain    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+}
+
+model User {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  name           String?
+  roles          String[]       @default([])
+  organizationId String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization?  @relation(fields: [organizationId], references: [id])
+  credential     UserCredential?
+}
+
+model UserCredential {
+  userId          String  @id
+  password        String?
+  passwordUpdated Boolean @default(false)
+  googleId        String? @unique
+  azureAdId       String? @unique
+  phone           String?
+  avatar          String?
+  origin          String?
+  dateOfBirth     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

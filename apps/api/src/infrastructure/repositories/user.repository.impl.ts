@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 import { Organization, User } from '../../domain/entities/user.entity';
 import { UserRepository } from '../../domain/repositories/user.repository.interface';
 
@@ -11,6 +12,7 @@ export class UserRepositoryImpl implements UserRepository {
       where: { id },
       include: {
         organization: true,
+        credential: true,
       },
     });
 
@@ -22,6 +24,7 @@ export class UserRepositoryImpl implements UserRepository {
       where: { email },
       include: {
         organization: true,
+        credential: true,
       },
     });
 
@@ -29,10 +32,15 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async findByGoogleId(googleId: string): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { googleId },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        credential: {
+          googleId,
+        },
+      },
       include: {
         organization: true,
+        credential: true,
       },
     });
 
@@ -40,10 +48,15 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async findByAzureAdId(azureAdId: string): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { azureAdId },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        credential: {
+          azureAdId,
+        },
+      },
       include: {
         organization: true,
+        credential: true,
       },
     });
 
@@ -51,23 +64,51 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async save(user: User): Promise<User> {
+    const credentialCreate: Record<string, unknown> = {
+      passwordUpdated: user.passwordUpdated ?? false,
+    };
+
+    if (user.password !== undefined) {
+      credentialCreate.password = user.password;
+    }
+
+    if (user.googleId !== undefined) {
+      credentialCreate.googleId = user.googleId;
+    }
+
+    if (user.azureAdId !== undefined) {
+      credentialCreate.azureAdId = user.azureAdId;
+    }
+
+    if (user.phone !== undefined) {
+      credentialCreate.phone = user.phone;
+    }
+
+    if (user.avatar !== undefined) {
+      credentialCreate.avatar = user.avatar;
+    }
+
+    if (user.origin !== undefined) {
+      credentialCreate.origin = user.origin;
+    }
+
+    if (user.dateOfBirth !== undefined) {
+      credentialCreate.dateOfBirth = user.dateOfBirth;
+    }
+
     const createdUser = await this.prisma.user.create({
       data: {
         email: user.email,
         name: user.name,
-        password: user.password,
-        passwordUpdated: user.passwordUpdated,
-        googleId: user.googleId,
-        azureAdId: user.azureAdId,
-        phone: user.phone,
-        avatar: user.avatar,
         roles: user.roles,
-        origin: user.origin,
-        dateOfBirth: user.dateOfBirth,
         organizationId: user.organizationId,
+        credential: {
+          create: credentialCreate,
+        },
       },
       include: {
         organization: true,
+        credential: true,
       },
     });
 
@@ -75,16 +116,77 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async update(id: string, userData: Partial<User>): Promise<User> {
+    const userUpdateData: Record<string, unknown> = {};
+
+    if (userData.name !== undefined) {
+      userUpdateData.name = userData.name;
+    }
+
+    if (userData.roles !== undefined) {
+      userUpdateData.roles = userData.roles;
+    }
+
+    if (userData.organizationId !== undefined) {
+      userUpdateData.organizationId = userData.organizationId;
+    }
+
+    const credentialUpdate: Record<string, unknown> = {};
+
+    if (userData.password !== undefined) {
+      credentialUpdate.password = userData.password;
+    }
+
+    if (userData.passwordUpdated !== undefined) {
+      credentialUpdate.passwordUpdated = userData.passwordUpdated;
+    }
+
+    if (userData.googleId !== undefined) {
+      credentialUpdate.googleId = userData.googleId;
+    }
+
+    if (userData.azureAdId !== undefined) {
+      credentialUpdate.azureAdId = userData.azureAdId;
+    }
+
+    if (userData.phone !== undefined) {
+      credentialUpdate.phone = userData.phone;
+    }
+
+    if (userData.avatar !== undefined) {
+      credentialUpdate.avatar = userData.avatar;
+    }
+
+    if (userData.origin !== undefined) {
+      credentialUpdate.origin = userData.origin;
+    }
+
+    if (userData.dateOfBirth !== undefined) {
+      credentialUpdate.dateOfBirth = userData.dateOfBirth;
+    }
+
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: {
-        name: userData.name,
-        phone: userData.phone,
-        avatar: userData.avatar,
-        roles: userData.roles,
+        ...userUpdateData,
+        ...(Object.keys(credentialUpdate).length > 0
+          ? {
+              credential: {
+                upsert: {
+                  update: credentialUpdate,
+                  create: {
+                    passwordUpdated:
+                      (credentialUpdate.passwordUpdated as boolean | undefined) ??
+                      false,
+                    ...credentialUpdate,
+                  },
+                },
+              },
+            }
+          : {}),
       },
       include: {
         organization: true,
+        credential: true,
       },
     });
 
@@ -120,6 +222,7 @@ export class UserRepositoryImpl implements UserRepository {
       where: and.length > 0 ? { AND: and } : undefined,
       include: {
         organization: true,
+        credential: true,
       },
       skip,
       take,
@@ -136,9 +239,6 @@ export class UserRepositoryImpl implements UserRepository {
         OR: [
           { email: { contains: search, mode: 'insensitive' } },
           { name: { contains: search, mode: 'insensitive' } },
-          {
-            student: { studentCode: { contains: search, mode: 'insensitive' } },
-          },
         ],
       });
     }
@@ -153,30 +253,34 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   private mapToDomainEntity(user: any): User {
+    const organization = user.organization
+      ? new Organization(
+          user.organization.id,
+          user.organization.name,
+          user.organization.domain,
+          user.organization.createdAt,
+          user.organization.updatedAt,
+        )
+      : undefined;
+
+    const credential = user.credential ?? {};
+
     return new User(
       user.id,
       user.email,
       user.name,
-      user.password,
-      user.passwordUpdated,
-      user.googleId,
-      user.azureAdId,
-      user.phone,
-      user.avatar,
+      credential.password,
+      credential.passwordUpdated ?? false,
+      credential.googleId,
+      credential.azureAdId,
+      credential.phone,
+      credential.avatar,
       user.roles,
-      user.origin,
-      user.dateOfBirth,
+      credential.origin,
+      credential.dateOfBirth,
       user.organizationId,
       user.createdAt,
-      user.organization
-        ? new Organization(
-            user.organization.id,
-            user.organization.name,
-            user.organization.domain,
-            user.organization.createdAt,
-            user.organization.updatedAt,
-          )
-        : undefined,
+      organization,
     );
   }
 }
