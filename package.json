@@ -24,8 +24,8 @@
   },
   "private": true,
   "dependencies": {
-    "@fastify/under-pressure": "^8.6.0",
-    "@fastify/helmet": "^12.2.0",
+    "@fastify/helmet": "13.0.2",
+    "@fastify/under-pressure": "9.0.3",
     "@nestjs/bull": "^11.0.2",
     "@nestjs/cache-manager": "^3.0.1",
     "@nestjs/common": "11.1.0",

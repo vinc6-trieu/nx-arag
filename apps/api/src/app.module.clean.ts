@@ -1,20 +1,25 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import {
+  AadBearerStrategy,
+  IdempotencyInterceptor,
+  RequestIdMiddleware,
+} from '@lib/utils';
 import { CacheModule } from '@nestjs/cache-manager';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import tracer from 'dd-trace';
 import { CaslModule } from 'nest-casl';
 import { LoggerModule } from 'nestjs-pino';
-import tracer from 'dd-trace';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { RequestIdMiddleware, IdempotencyInterceptor, AadBearerStrategy } from '@lib/utils';
 import { UserHook } from '../casl/hooks';
 import { ApplicationModule } from './application/application.module';
+import { datadogConfig, DatadogConfig } from './config/datadog.config';
+import { envValidationSchema } from './config/env.validation';
 import { DomainModule } from './domain/domain.module';
 import { UserRoles } from './domain/entities/user.entity';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
-import { InterfaceModule } from './interface/interface.module';
-import { envValidationSchema } from './config/env.validation';
-import { RateLimitGuard } from './interface/guards/rate-limit.guard';
 import { DatadogTracerShutdown } from './instrumentation/datadog-tracer.shutdown';
+import { RateLimitGuard } from './interface/guards/rate-limit.guard';
+import { InterfaceModule } from './interface/interface.module';
 
 @Module({
   imports: [
@@ -22,6 +27,7 @@ import { DatadogTracerShutdown } from './instrumentation/datadog-tracer.shutdown
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: envValidationSchema,
+      load: [datadogConfig],
     }),
     CacheModule.registerAsync({
       isGlobal: true,
@@ -38,12 +44,12 @@ import { DatadogTracerShutdown } from './instrumentation/datadog-tracer.shutdown
     InterfaceModule,
 
     LoggerModule.forRootAsync({
+      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const nodeEnv =
-          configService.get<string>('NODE_ENV') ??
-          process.env.NODE_ENV ??
-          'development';
+        const nodeEnv = configService.get<string>('NODE_ENV', 'development');
+        const datadog = configService.get<DatadogConfig>('datadog');
+
         const logLevel =
           configService.get<string>('LOG_LEVEL') ??
           (nodeEnv === 'production' ? 'info' : 'debug');
@@ -58,6 +64,11 @@ import { DatadogTracerShutdown } from './instrumentation/datadog-tracer.shutdown
           pinoHttp: {
             level: logLevel,
             base: {
+              env: datadog?.env ?? configService.get<string>('DD_ENV'),
+              service:
+                datadog?.service ?? configService.get<string>('DD_SERVICE'),
+              version:
+                datadog?.version ?? configService.get<string>('DD_VERSION'),
               ...(service ? { service } : {}),
               ...(env ? { env } : {}),
               ...(version ? { version } : {}),

@@ -4,7 +4,7 @@ export class User {
     public readonly email: string,
     public readonly name?: string,
     public readonly password?: string,
-    public readonly passwordUpdated: boolean = false,
+    public readonly passwordUpdated = false,
     public readonly googleId?: string,
     public readonly azureAdId?: string,
     public readonly phone?: string,
