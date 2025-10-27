@@ -1,4 +1,4 @@
-import { ExecutionContext, TooManyRequestsException } from '@nestjs/common';
+import { ExecutionContext, HttpException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cache } from 'cache-manager';
 import type { FastifyReply, FastifyRequest } from 'fastify';
@@ -16,10 +16,10 @@ describe('RateLimitGuard', () => {
   beforeEach(() => {
     cacheStore = {};
     const cacheMock: Partial<Cache> = {
-      get: jest.fn(async (key: string) => cacheStore[key]),
+      get: jest.fn(async (key: string) => cacheStore[key]) as any,
       set: jest.fn(async (key: string, value: unknown) => {
         cacheStore[key] = value;
-      }),
+      }) as any,
     };
     cacheManager = cacheMock as Cache;
 
@@ -79,7 +79,7 @@ describe('RateLimitGuard', () => {
     await guard.canActivate(context);
 
     await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
-      TooManyRequestsException,
+      HttpException,
     );
     expect(reply.header).toHaveBeenCalledWith(
       'Retry-After',

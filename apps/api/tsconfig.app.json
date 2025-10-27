@@ -10,7 +10,7 @@
     "esModuleInterop": true
   },
   "include": [
-    "casl/**/*.ts",
+    "src/casl/**/*.ts",
     "src/**/*.ts",
     "prisma/**/*.ts",
     "*/*.d.ts",

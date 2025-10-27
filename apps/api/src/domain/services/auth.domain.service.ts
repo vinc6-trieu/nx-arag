@@ -14,16 +14,12 @@ export class AuthDomainService {
   }
 
   static canManageUsers(user: User): boolean {
-    return user.isAdmin() || user.isTeacher();
+    return user.isAdmin();
   }
 
-  static canAccessStudentData(user: User, studentId: string): boolean {
+  static canAccessData(user: User): boolean {
     if (user.isAdmin()) return true;
-    if (user.isStudent() && user.id === studentId) return true;
-    if (user.isParent()) {
-      // Add parent-student relationship check here
-      return true; // Simplified for now
-    }
+
     return false;
   }
 

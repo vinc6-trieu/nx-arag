@@ -8,16 +8,12 @@ export class User {
     public readonly googleId?: string,
     public readonly azureAdId?: string,
     public readonly phone?: string,
-    public readonly campusCode?: string,
     public readonly avatar?: string,
     public readonly roles: string[] = [],
     public readonly origin?: string,
     public readonly dateOfBirth?: string,
     public readonly organizationId?: string,
     public readonly createdAt: Date = new Date(),
-    public readonly student?: StudentProfile,
-    public readonly teacher?: TeacherProfile,
-    public readonly parent?: ParentProfile,
     public readonly organization?: Organization,
   ) {}
 
@@ -46,36 +42,6 @@ export class User {
   }
 }
 
-export class StudentProfile {
-  constructor(
-    public readonly id: string,
-    public readonly userId: string,
-    public readonly studentCode?: string,
-    public readonly grade?: string,
-    public readonly className?: string,
-    public readonly schoolLevel?: string,
-    public readonly createdAt: Date = new Date(),
-  ) {}
-}
-
-export class TeacherProfile {
-  constructor(
-    public readonly id: string,
-    public readonly userId: string,
-    public readonly homeroomClasses: string[] = [],
-    public readonly teachingGrades: string[] = [],
-    public readonly createdAt: Date = new Date(),
-  ) {}
-}
-
-export class ParentProfile {
-  constructor(
-    public readonly id: string,
-    public readonly userId: string,
-    public readonly createdAt: Date = new Date(),
-  ) {}
-}
-
 export class Organization {
   constructor(
     public readonly id: string,
@@ -88,8 +54,6 @@ export class Organization {
 
 export enum UserRoles {
   admin = 'admin',
-  teacher = 'teacher',
-  student = 'student',
-  parent = 'parent',
+  member = 'member',
   guest = 'guest',
 }

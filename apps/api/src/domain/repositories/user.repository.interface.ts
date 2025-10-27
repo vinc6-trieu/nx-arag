@@ -5,7 +5,6 @@ export interface UserRepository {
   findByEmail(email: string): Promise<User | null>;
   findByGoogleId(googleId: string): Promise<User | null>;
   findByAzureAdId(azureAdId: string): Promise<User | null>;
-  findByStudentCode(studentCode: string): Promise<User | null>;
   save(user: User): Promise<User>;
   update(id: string, user: Partial<User>): Promise<User>;
   delete(id: string): Promise<void>;
@@ -13,10 +12,7 @@ export interface UserRepository {
     skip: number,
     take: number,
     search?: string,
-    campus?: string,
-    grade?: string,
-    className?: string,
     roles?: string[],
   ): Promise<User[]>;
-  count(search?: string, campus?: string, roles?: string[]): Promise<number>;
+  count(search?: string, roles?: string[]): Promise<number>;
 }

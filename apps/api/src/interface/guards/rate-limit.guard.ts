@@ -1,13 +1,14 @@
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import {
   CanActivate,
   ExecutionContext,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
-  TooManyRequestsException,
 } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
+import { type Cache } from 'cache-manager';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
 interface RateLimitEntry {
@@ -25,7 +26,10 @@ export class RateLimitGuard implements CanActivate {
     private readonly configService: ConfigService,
   ) {
     this.maxRequests = this.configService.get<number>('RATE_LIMIT_MAX', 100);
-    this.windowMs = this.configService.get<number>('RATE_LIMIT_WINDOW_MS', 60000);
+    this.windowMs = this.configService.get<number>(
+      'RATE_LIMIT_WINDOW_MS',
+      60000,
+    );
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -61,7 +65,10 @@ export class RateLimitGuard implements CanActivate {
         'Retry-After',
         Math.max(1, Math.ceil((entry.expiresAt - now) / 1000)),
       );
-      throw new TooManyRequestsException('Too many requests');
+      throw new HttpException(
+        'Too many requests',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
 
     return true;
@@ -76,7 +83,11 @@ export class RateLimitGuard implements CanActivate {
     return request.ip || request.socket.remoteAddress || 'unknown';
   }
 
-  private setHeaders(reply: FastifyReply, remaining: number, expiresAt: number) {
+  private setHeaders(
+    reply: FastifyReply,
+    remaining: number,
+    expiresAt: number,
+  ) {
     reply.header('X-RateLimit-Limit', this.maxRequests);
     reply.header('X-RateLimit-Remaining', Math.max(0, remaining));
     reply.header('X-RateLimit-Reset', Math.ceil(expiresAt / 1000));

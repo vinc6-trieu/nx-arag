@@ -21,13 +21,13 @@ export class ExternalAuthService {
       });
 
       const payload = ticket.getPayload();
-      if (!payload) {
+      if (!payload || payload.email === undefined) {
         throw new Error('Invalid Google token');
       }
 
       return new AADProfileDto(
         payload.sub,
-        payload.email!,
+        payload.email,
         payload.name,
         payload.given_name,
         payload.family_name,

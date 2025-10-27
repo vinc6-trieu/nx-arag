@@ -1,12 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
-import {
-  Organization,
-  ParentProfile,
-  StudentProfile,
-  TeacherProfile,
-  User,
-} from '../../domain/entities/user.entity';
+import { Organization, User } from '../../domain/entities/user.entity';
 import { UserRepository } from '../../domain/repositories/user.repository.interface';
 
 @Injectable()
@@ -17,9 +10,6 @@ export class UserRepositoryImpl implements UserRepository {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
-        student: true,
-        teacher: true,
-        parent: true,
         organization: true,
       },
     });
@@ -31,9 +21,6 @@ export class UserRepositoryImpl implements UserRepository {
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: {
-        student: true,
-        teacher: true,
-        parent: true,
         organization: true,
       },
     });
@@ -45,9 +32,6 @@ export class UserRepositoryImpl implements UserRepository {
     const user = await this.prisma.user.findUnique({
       where: { googleId },
       include: {
-        student: true,
-        teacher: true,
-        parent: true,
         organization: true,
       },
     });
@@ -59,23 +43,6 @@ export class UserRepositoryImpl implements UserRepository {
     const user = await this.prisma.user.findUnique({
       where: { azureAdId },
       include: {
-        student: true,
-        teacher: true,
-        parent: true,
-        organization: true,
-      },
-    });
-
-    return user ? this.mapToDomainEntity(user) : null;
-  }
-
-  async findByStudentCode(studentCode: string): Promise<User | null> {
-    const user = await this.prisma.user.findFirst({
-      where: { student: { studentCode } },
-      include: {
-        student: true,
-        teacher: true,
-        parent: true,
         organization: true,
       },
     });
@@ -93,7 +60,6 @@ export class UserRepositoryImpl implements UserRepository {
         googleId: user.googleId,
         azureAdId: user.azureAdId,
         phone: user.phone,
-        campusCode: user.campusCode,
         avatar: user.avatar,
         roles: user.roles,
         origin: user.origin,
@@ -101,9 +67,6 @@ export class UserRepositoryImpl implements UserRepository {
         organizationId: user.organizationId,
       },
       include: {
-        student: true,
-        teacher: true,
-        parent: true,
         organization: true,
       },
     });
@@ -121,9 +84,6 @@ export class UserRepositoryImpl implements UserRepository {
         roles: userData.roles,
       },
       include: {
-        student: true,
-        teacher: true,
-        parent: true,
         organization: true,
       },
     });
@@ -139,9 +99,6 @@ export class UserRepositoryImpl implements UserRepository {
     skip: number,
     take: number,
     search?: string,
-    campus?: string,
-    grade?: string,
-    className?: string,
     roles?: string[],
   ): Promise<User[]> {
     const and: any[] = [];
@@ -151,23 +108,8 @@ export class UserRepositoryImpl implements UserRepository {
         OR: [
           { email: { contains: search, mode: 'insensitive' } },
           { name: { contains: search, mode: 'insensitive' } },
-          {
-            student: { studentCode: { contains: search, mode: 'insensitive' } },
-          },
         ],
       });
-    }
-
-    if (campus) {
-      and.push({ campusCode: campus });
-    }
-
-    if (grade) {
-      and.push({ student: { grade } });
-    }
-
-    if (className) {
-      and.push({ student: { class: className } });
     }
 
     if (roles && roles.length > 0) {
@@ -177,9 +119,6 @@ export class UserRepositoryImpl implements UserRepository {
     const users = await this.prisma.user.findMany({
       where: and.length > 0 ? { AND: and } : undefined,
       include: {
-        student: true,
-        teacher: true,
-        parent: true,
         organization: true,
       },
       skip,
@@ -189,11 +128,7 @@ export class UserRepositoryImpl implements UserRepository {
     return users.map((user) => this.mapToDomainEntity(user));
   }
 
-  async count(
-    search?: string,
-    campus?: string,
-    roles?: string[],
-  ): Promise<number> {
+  async count(search?: string, roles?: string[]): Promise<number> {
     const and: any[] = [];
 
     if (search) {
@@ -206,10 +141,6 @@ export class UserRepositoryImpl implements UserRepository {
           },
         ],
       });
-    }
-
-    if (campus) {
-      and.push({ campusCode: campus });
     }
 
     if (roles && roles.length > 0) {
@@ -231,40 +162,12 @@ export class UserRepositoryImpl implements UserRepository {
       user.googleId,
       user.azureAdId,
       user.phone,
-      user.campusCode,
       user.avatar,
       user.roles,
       user.origin,
       user.dateOfBirth,
       user.organizationId,
       user.createdAt,
-      user.student
-        ? new StudentProfile(
-            user.student.id,
-            user.student.userId,
-            user.student.studentCode,
-            user.student.grade,
-            user.student.class,
-            user.student.schoolLevel,
-            user.student.createdAt,
-          )
-        : undefined,
-      user.teacher
-        ? new TeacherProfile(
-            user.teacher.id,
-            user.teacher.userId,
-            user.teacher.homeroomClasses,
-            user.teacher.teachingGrades,
-            user.teacher.createdAt,
-          )
-        : undefined,
-      user.parent
-        ? new ParentProfile(
-            user.parent.id,
-            user.parent.userId,
-            user.parent.createdAt,
-          )
-        : undefined,
       user.organization
         ? new Organization(
             user.organization.id,
