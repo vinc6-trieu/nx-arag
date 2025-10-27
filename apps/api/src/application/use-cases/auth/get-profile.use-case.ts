@@ -42,10 +42,7 @@ export class GetProfileUseCase {
       user.phone,
       user.avatar,
       user.origin,
-      user.campusCode,
       user.organization,
-      user.teacher,
-      user.student,
     );
   }
 
@@ -58,10 +55,7 @@ export class GetProfileUseCase {
       user.phone,
       user.avatar,
       user.origin,
-      user.campusCode,
       user.organization,
-      user.teacher,
-      user.student,
     );
   }
 }

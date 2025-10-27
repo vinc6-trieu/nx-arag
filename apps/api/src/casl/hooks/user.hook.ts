@@ -12,10 +12,7 @@ export interface UserDto {
   avatar?: string;
   roles: string[];
   origin?: string;
-  campusCode?: string;
   organization?: any;
-  teacher?: any;
-  student?: any;
 }
 
 @Injectable()

@@ -58,10 +58,7 @@ export class UserDto {
     public readonly phone?: string,
     public readonly avatar?: string,
     public readonly origin?: string,
-    public readonly campusCode?: string,
     public readonly organization?: any,
-    public readonly teacher?: any,
-    public readonly student?: any,
   ) {}
 }
 

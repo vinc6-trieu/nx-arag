@@ -36,7 +36,6 @@ export class RegisterUseCase {
       undefined, // googleId
       undefined, // azureAdId
       request.phone,
-      undefined, // campusCode
       undefined, // avatar
       request.roles || ['student'], // default role
       request.origin,
@@ -80,10 +79,7 @@ export class RegisterUseCase {
       user.phone,
       user.avatar,
       user.origin,
-      user.campusCode,
       user.organization,
-      user.teacher,
-      user.student,
     );
   }
 }

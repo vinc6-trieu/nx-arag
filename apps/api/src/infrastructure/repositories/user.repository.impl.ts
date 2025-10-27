@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 import { Organization, User } from '../../domain/entities/user.entity';
 import { UserRepository } from '../../domain/repositories/user.repository.interface';
 
@@ -11,6 +12,7 @@ export class UserRepositoryImpl implements UserRepository {
       where: { id },
       include: {
         organization: true,
+        sensitiveInfo: true,
       },
     });
 
@@ -22,6 +24,7 @@ export class UserRepositoryImpl implements UserRepository {
       where: { email },
       include: {
         organization: true,
+        sensitiveInfo: true,
       },
     });
 
@@ -29,10 +32,15 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async findByGoogleId(googleId: string): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { googleId },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        sensitiveInfo: {
+          googleId,
+        },
+      },
       include: {
         organization: true,
+        sensitiveInfo: true,
       },
     });
 
@@ -40,10 +48,15 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async findByAzureAdId(azureAdId: string): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { azureAdId },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        sensitiveInfo: {
+          azureAdId,
+        },
+      },
       include: {
         organization: true,
+        sensitiveInfo: true,
       },
     });
 
@@ -51,23 +64,51 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async save(user: User): Promise<User> {
+    const sensitiveInfoCreate: Record<string, unknown> = {
+      passwordUpdated: user.passwordUpdated ?? false,
+    };
+
+    if (user.password !== undefined) {
+      sensitiveInfoCreate.password = user.password;
+    }
+
+    if (user.googleId !== undefined) {
+      sensitiveInfoCreate.googleId = user.googleId;
+    }
+
+    if (user.azureAdId !== undefined) {
+      sensitiveInfoCreate.azureAdId = user.azureAdId;
+    }
+
+    if (user.phone !== undefined) {
+      sensitiveInfoCreate.phone = user.phone;
+    }
+
+    if (user.avatar !== undefined) {
+      sensitiveInfoCreate.avatar = user.avatar;
+    }
+
+    if (user.origin !== undefined) {
+      sensitiveInfoCreate.origin = user.origin;
+    }
+
+    if (user.dateOfBirth !== undefined) {
+      sensitiveInfoCreate.dateOfBirth = user.dateOfBirth;
+    }
+
     const createdUser = await this.prisma.user.create({
       data: {
         email: user.email,
         name: user.name,
-        password: user.password,
-        passwordUpdated: user.passwordUpdated,
-        googleId: user.googleId,
-        azureAdId: user.azureAdId,
-        phone: user.phone,
-        avatar: user.avatar,
         roles: user.roles,
-        origin: user.origin,
-        dateOfBirth: user.dateOfBirth,
         organizationId: user.organizationId,
+        sensitiveInfo: {
+          create: sensitiveInfoCreate,
+        },
       },
       include: {
         organization: true,
+        sensitiveInfo: true,
       },
     });
 
@@ -75,16 +116,77 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async update(id: string, userData: Partial<User>): Promise<User> {
+    const userUpdateData: Record<string, unknown> = {};
+
+    if (userData.name !== undefined) {
+      userUpdateData.name = userData.name;
+    }
+
+    if (userData.roles !== undefined) {
+      userUpdateData.roles = userData.roles;
+    }
+
+    if (userData.organizationId !== undefined) {
+      userUpdateData.organizationId = userData.organizationId;
+    }
+
+    const sensitiveInfoUpdate: Record<string, unknown> = {};
+
+    if (userData.password !== undefined) {
+      sensitiveInfoUpdate.password = userData.password;
+    }
+
+    if (userData.passwordUpdated !== undefined) {
+      sensitiveInfoUpdate.passwordUpdated = userData.passwordUpdated;
+    }
+
+    if (userData.googleId !== undefined) {
+      sensitiveInfoUpdate.googleId = userData.googleId;
+    }
+
+    if (userData.azureAdId !== undefined) {
+      sensitiveInfoUpdate.azureAdId = userData.azureAdId;
+    }
+
+    if (userData.phone !== undefined) {
+      sensitiveInfoUpdate.phone = userData.phone;
+    }
+
+    if (userData.avatar !== undefined) {
+      sensitiveInfoUpdate.avatar = userData.avatar;
+    }
+
+    if (userData.origin !== undefined) {
+      sensitiveInfoUpdate.origin = userData.origin;
+    }
+
+    if (userData.dateOfBirth !== undefined) {
+      sensitiveInfoUpdate.dateOfBirth = userData.dateOfBirth;
+    }
+
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: {
-        name: userData.name,
-        phone: userData.phone,
-        avatar: userData.avatar,
-        roles: userData.roles,
+        ...userUpdateData,
+        ...(Object.keys(sensitiveInfoUpdate).length > 0
+          ? {
+              sensitiveInfo: {
+                upsert: {
+                  update: sensitiveInfoUpdate,
+                  create: {
+                    passwordUpdated:
+                      (sensitiveInfoUpdate.passwordUpdated as boolean | undefined) ??
+                      false,
+                    ...sensitiveInfoUpdate,
+                  },
+                },
+              },
+            }
+          : {}),
       },
       include: {
         organization: true,
+        sensitiveInfo: true,
       },
     });
 
@@ -120,6 +222,7 @@ export class UserRepositoryImpl implements UserRepository {
       where: and.length > 0 ? { AND: and } : undefined,
       include: {
         organization: true,
+        sensitiveInfo: true,
       },
       skip,
       take,
@@ -136,9 +239,6 @@ export class UserRepositoryImpl implements UserRepository {
         OR: [
           { email: { contains: search, mode: 'insensitive' } },
           { name: { contains: search, mode: 'insensitive' } },
-          {
-            student: { studentCode: { contains: search, mode: 'insensitive' } },
-          },
         ],
       });
     }
@@ -153,30 +253,34 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   private mapToDomainEntity(user: any): User {
+    const organization = user.organization
+      ? new Organization(
+          user.organization.id,
+          user.organization.name,
+          user.organization.domain,
+          user.organization.createdAt,
+          user.organization.updatedAt,
+        )
+      : undefined;
+
+    const sensitiveInfo = user.sensitiveInfo ?? {};
+
     return new User(
       user.id,
       user.email,
       user.name,
-      user.password,
-      user.passwordUpdated,
-      user.googleId,
-      user.azureAdId,
-      user.phone,
-      user.avatar,
+      sensitiveInfo.password,
+      sensitiveInfo.passwordUpdated ?? false,
+      sensitiveInfo.googleId,
+      sensitiveInfo.azureAdId,
+      sensitiveInfo.phone,
+      sensitiveInfo.avatar,
       user.roles,
-      user.origin,
-      user.dateOfBirth,
+      sensitiveInfo.origin,
+      sensitiveInfo.dateOfBirth,
       user.organizationId,
       user.createdAt,
-      user.organization
-        ? new Organization(
-            user.organization.id,
-            user.organization.name,
-            user.organization.domain,
-            user.organization.createdAt,
-            user.organization.updatedAt,
-          )
-        : undefined,
+      organization,
     );
   }
 }
