@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { metricsClient } from '@nx-arag/observability';
+
 import { ApiResponseEnvelope } from '../common/api-response.types';
 
 @Injectable()
@@ -21,19 +23,35 @@ export class ApiResponseInterceptor<T>
     const response = context.switchToHttp().getResponse();
 
     return next.handle().pipe(
-      map((data) => ({
-        code: String(response.statusCode),
-        data,
-        duration: `${Date.now() - now}ms`,
-        error: response.statusCode >= 400,
-        message:
-          response.statusMessage ??
-          response.raw?.statusMessage ??
-          'OK',
-        meta: undefined,
-        path: request.url,
-        timestamp: new Date().toISOString(),
-      })),
+      map((data) => {
+        const elapsed = Date.now() - now;
+        const payload: ApiResponseEnvelope<T> = {
+          code: String(response.statusCode),
+          data,
+          duration: `${elapsed}ms`,
+          error: response.statusCode >= 400,
+          message:
+            response.statusMessage ??
+            response.raw?.statusMessage ??
+            'OK',
+          meta: undefined,
+          path: request.url,
+          timestamp: new Date().toISOString(),
+        };
+
+        metricsClient()?.distribution(
+          'api.request.duration',
+          elapsed,
+          undefined,
+          [
+            `method:${request.method}`,
+            `route:${request.route?.path ?? request.url ?? 'unknown'}`,
+            `status:${response.statusCode}`,
+          ],
+        );
+
+        return payload;
+      }),
     );
   }
 }
