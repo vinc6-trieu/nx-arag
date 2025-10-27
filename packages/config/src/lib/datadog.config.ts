@@ -1,5 +1,5 @@
-import { registerAs } from '@nestjs/config';
 import type { ConfigType } from '@nestjs/config';
+import { registerAs } from '@nestjs/config';
 
 const normalizeBoolean = (value: unknown, defaultValue = false): boolean => {
   if (typeof value === 'boolean') {

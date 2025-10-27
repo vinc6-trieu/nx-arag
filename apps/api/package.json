@@ -1,9 +1,9 @@
 {
-  "name": "@v-project/api",
+  "name": "@nx-arag/api",
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "name": "auth",
+    "name": "api",
     "targets": {
       "build": {
         "executor": "nx:run-commands",
@@ -28,15 +28,15 @@
           "build"
         ],
         "options": {
-          "buildTarget": "auth:build",
+          "buildTarget": "api:build",
           "runBuildTargetDependencies": false
         },
         "configurations": {
           "development": {
-            "buildTarget": "auth:build:development"
+            "buildTarget": "api:build:development"
           },
           "production": {
-            "buildTarget": "auth:build:production"
+            "buildTarget": "api:build:production"
           }
         }
       },

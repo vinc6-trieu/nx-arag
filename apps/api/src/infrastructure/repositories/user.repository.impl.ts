@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
 import { Organization, User } from '../../domain/entities/user.entity';
 import { UserRepository } from '../../domain/repositories/user.repository.interface';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class UserRepositoryImpl implements UserRepository {
@@ -175,8 +175,9 @@ export class UserRepositoryImpl implements UserRepository {
                   update: credentialUpdate,
                   create: {
                     passwordUpdated:
-                      (credentialUpdate.passwordUpdated as boolean | undefined) ??
-                      false,
+                      (credentialUpdate.passwordUpdated as
+                        | boolean
+                        | undefined) ?? false,
                     ...credentialUpdate,
                   },
                 },
