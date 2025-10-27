@@ -3,9 +3,9 @@ import {
   datadogTracer,
   initDatadogTracer,
   isDatadogTracerInitialized,
-} from '@lib/observability/datadog-tracer';
+} from '@lib/observability';
 
 initDatadogTracer({ service: 'api' });
 
-export { datadogTracer, closeDatadogTracer };
+export { closeDatadogTracer, datadogTracer };
 export const datadogTracerInitialized = () => isDatadogTracerInitialized();

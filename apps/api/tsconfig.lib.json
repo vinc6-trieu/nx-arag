@@ -16,7 +16,8 @@
     "src/**/*.ts",
     "prisma/**/*.ts",
     "*/*.d.ts",
-    "../../packages/utils/src/**/*.ts"
+    "../../packages/utils/src/**/*.ts",
+    "../../packages/**/*.ts"
   ],
   "references": []
 }

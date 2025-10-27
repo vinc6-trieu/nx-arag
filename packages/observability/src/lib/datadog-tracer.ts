@@ -1,6 +1,14 @@
-import tracer, { InitConfiguration } from 'dd-trace';
+import tracer from 'dd-trace';
 
 type Nullable<T> = T | undefined;
+
+export interface InitConfiguration {
+  service?: string;
+  env?: string;
+  version?: string;
+  enabled?: boolean;
+  logInjection?: boolean;
+}
 
 export interface DatadogTracerInitOptions {
   /**
@@ -46,14 +54,16 @@ const coerceBoolean = (value: Nullable<string>): Nullable<boolean> => {
 
 let tracerInitialized = false;
 
-const resolveConfigFromEnv = (options: DatadogTracerInitOptions): {
-  config: InitConfiguration;
+const resolveConfigFromEnv = (
+  options: DatadogTracerInitOptions,
+): {
+  config: tracer.TracerOptions;
   enabled: Nullable<boolean>;
 } => {
   const envEnabled = coerceBoolean(process.env.DD_TRACE_ENABLED);
   const enabled = options.enabled ?? envEnabled;
 
-  const config: InitConfiguration = {
+  const config: tracer.TracerOptions = {
     logInjection: options.logInjection ?? true,
   };
 
@@ -73,7 +83,7 @@ const resolveConfigFromEnv = (options: DatadogTracerInitOptions): {
   }
 
   if (enabled !== undefined) {
-    config.enabled = enabled;
+    config.apmTracingEnabled = enabled;
   }
 
   return { config, enabled };
@@ -105,19 +115,44 @@ export const initDatadogTracer = (
 export const isDatadogTracerInitialized = (): boolean => tracerInitialized;
 
 export const closeDatadogTracer = async (): Promise<void> => {
-  if (!tracerInitialized) {
-    return;
-  }
+  if (!tracerInitialized) return;
 
-  await new Promise<void>((resolve, reject) => {
-    tracer.close((error) => {
-      if (error) {
-        reject(error);
-      } else {
+  // Helper: best-effort flush with a safety timeout so shutdown isn’t blocked forever
+  const flush = async (timeoutMs = 5000) => {
+    // dd-trace v5 exposes tracer.flush(cb)
+    const p = new Promise<void>((resolve) => {
+      try {
+        // @ts-expect-error: types may not declare flush in some versions
+        tracer.flush?.(resolve);
+      } catch {
         resolve();
       }
     });
-  });
+
+    // race against timeout
+    await Promise.race([
+      p,
+      new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
+    ]);
+  };
+
+  try {
+    await flush();
+
+    // dd-trace v5.40.0 provides an async shutdown
+    // Fallbacks cover older signatures just in case.
+    if (typeof (tracer as any).shutdown === 'function') {
+      await (tracer as any).shutdown();
+    } else if (typeof (tracer as any).close === 'function') {
+      await (tracer as any).close();
+    } else if (typeof (tracer as any).stop === 'function') {
+      await (tracer as any).stop();
+    }
+  } catch {
+    // swallow: shutdown should never crash your process
+  } finally {
+    tracerInitialized = false;
+  }
 };
 
 export { tracer as datadogTracer };
