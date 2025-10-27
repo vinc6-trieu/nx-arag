@@ -3,6 +3,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CaslModule } from 'nest-casl';
 import { LoggerModule } from 'nestjs-pino';
+import tracer from 'dd-trace';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { RequestIdMiddleware, IdempotencyInterceptor, AadBearerStrategy } from '@lib/utils';
 import { UserHook } from '../casl/hooks';
@@ -35,21 +36,58 @@ import { RateLimitGuard } from './interface/guards/rate-limit.guard';
     ApplicationModule,
     InterfaceModule,
 
-    LoggerModule.forRoot({
-      pinoHttp: {
-        level:
-          process.env.LOG_LEVEL ??
-          (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? {
-                target: 'pino-pretty',
-                options: {
-                  singleLine: true,
-                  translateTime: 'SYS:standard',
-                },
+    LoggerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const nodeEnv =
+          configService.get<string>('NODE_ENV') ??
+          process.env.NODE_ENV ??
+          'development';
+        const logLevel =
+          configService.get<string>('LOG_LEVEL') ??
+          (nodeEnv === 'production' ? 'info' : 'debug');
+
+        const service =
+          configService.get<string>('DD_SERVICE') ?? process.env.DD_SERVICE;
+        const env = configService.get<string>('DD_ENV') ?? process.env.DD_ENV;
+        const version =
+          configService.get<string>('DD_VERSION') ?? process.env.DD_VERSION;
+
+        return {
+          pinoHttp: {
+            level: logLevel,
+            base: {
+              ...(service ? { service } : {}),
+              ...(env ? { env } : {}),
+              ...(version ? { version } : {}),
+            },
+            customProps: () => {
+              const scope = tracer.scope();
+              const span = scope.active();
+
+              if (!span) {
+                return {};
               }
-            : undefined,
+
+              const context = span.context();
+
+              return {
+                'dd.trace_id': context.toTraceId(),
+                'dd.span_id': context.toSpanId(),
+              };
+            },
+            transport:
+              nodeEnv !== 'production'
+                ? {
+                    target: 'pino-pretty',
+                    options: {
+                      singleLine: true,
+                      translateTime: 'SYS:standard',
+                    },
+                  }
+                : undefined,
+          },
+        };
       },
     }),
 
