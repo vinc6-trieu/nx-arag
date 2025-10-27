@@ -9,6 +9,7 @@ nx-arag/
 ├─ packages/
 │ ├─ shared/ # Domain types + ports/interfaces
 │ ├─ config/ # Config provider (envs)
+│ │ └─ datadog.config.ts # Datadog instrumentation + logger settings via ConfigService
 │ ├─ proto/ # gRPC/protobuf contracts (Buf layout)
 │ └─ utils/ # Common helpers (logging, tracing)
 │

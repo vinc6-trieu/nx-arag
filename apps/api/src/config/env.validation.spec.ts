@@ -26,6 +26,18 @@ describe('envValidationSchema', () => {
     expect(value.RATE_LIMIT_WINDOW_MS).toBe(60000);
   });
 
+  it('applies defaults for Datadog instrumentation', () => {
+    const { error, value } = envValidationSchema.validate(baseEnv);
+
+    expect(error).toBeUndefined();
+    expect(value.DD_ENV).toBe(baseEnv.NODE_ENV);
+    expect(value.DD_SERVICE).toBe('nx-arag-api');
+    expect(value.DD_VERSION).toBe('local');
+    expect(value.DD_TRACE_AGENT_URL).toBe('http://127.0.0.1:8126');
+    expect(value.DD_AGENT_HOST).toBe('127.0.0.1');
+    expect(value.DD_TRACE_ENABLED).toBe(false);
+  });
+
   it('fails when required secrets are missing', () => {
     const missingSecretEnv = { ...baseEnv };
     delete missingSecretEnv.JWT_SECRET;
@@ -62,6 +74,18 @@ describe('envValidationSchema', () => {
     ).toBe(true);
     expect(
       error?.details.some((detail) => detail.path.includes('RATE_LIMIT_MAX')),
+    ).toBe(true);
+  });
+
+  it('requires valid Datadog agent URLs when provided', () => {
+    const { error } = envValidationSchema.validate({
+      ...baseEnv,
+      DD_TRACE_AGENT_URL: 'not-a-url',
+    });
+
+    expect(error).toBeDefined();
+    expect(
+      error?.details.some((detail) => detail.path.includes('DD_TRACE_AGENT_URL')),
     ).toBe(true);
   });
 });

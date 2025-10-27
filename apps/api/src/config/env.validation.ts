@@ -12,4 +12,17 @@ export const envValidationSchema = Joi.object({
   CACHE_MAX_ITEMS: Joi.number().integer().min(1).default(1000),
   RATE_LIMIT_MAX: Joi.number().integer().min(1).default(100),
   RATE_LIMIT_WINDOW_MS: Joi.number().integer().min(1).default(60000),
+  DD_ENV: Joi.string().default(Joi.ref('NODE_ENV')),
+  DD_SERVICE: Joi.string().default('nx-arag-api'),
+  DD_VERSION: Joi.string().default('local'),
+  DD_TRACE_AGENT_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .default('http://127.0.0.1:8126'),
+  DD_AGENT_HOST: Joi.alternatives()
+    .try(
+      Joi.string().hostname(),
+      Joi.string().ip({ version: ['ipv4', 'ipv6'], cidr: 'forbidden' }),
+    )
+    .default('127.0.0.1'),
+  DD_TRACE_ENABLED: Joi.boolean().default(false),
 }).unknown(true);

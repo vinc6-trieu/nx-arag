@@ -12,6 +12,7 @@ import { UserRoles } from './domain/entities/user.entity';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { InterfaceModule } from './interface/interface.module';
 import { envValidationSchema } from './config/env.validation';
+import { datadogConfig, DatadogConfig } from './config/datadog.config';
 import { RateLimitGuard } from './interface/guards/rate-limit.guard';
 
 @Module({
@@ -20,6 +21,7 @@ import { RateLimitGuard } from './interface/guards/rate-limit.guard';
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: envValidationSchema,
+      load: [datadogConfig],
     }),
     CacheModule.registerAsync({
       isGlobal: true,
@@ -35,21 +37,39 @@ import { RateLimitGuard } from './interface/guards/rate-limit.guard';
     ApplicationModule,
     InterfaceModule,
 
-    LoggerModule.forRoot({
-      pinoHttp: {
-        level:
-          process.env.LOG_LEVEL ??
-          (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? {
-                target: 'pino-pretty',
-                options: {
-                  singleLine: true,
-                  translateTime: 'SYS:standard',
-                },
-              }
-            : undefined,
+    LoggerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const nodeEnv = configService.get<string>('NODE_ENV', 'development');
+        const datadog = configService.get<DatadogConfig>('datadog');
+
+        const logLevel =
+          configService.get<string>('LOG_LEVEL') ??
+          (nodeEnv === 'production' ? 'info' : 'debug');
+
+        return {
+          pinoHttp: {
+            level: logLevel,
+            base: {
+              env: datadog?.env ?? configService.get<string>('DD_ENV'),
+              service:
+                datadog?.service ?? configService.get<string>('DD_SERVICE'),
+              version:
+                datadog?.version ?? configService.get<string>('DD_VERSION'),
+            },
+            transport:
+              nodeEnv !== 'production'
+                ? {
+                    target: 'pino-pretty',
+                    options: {
+                      singleLine: true,
+                      translateTime: 'SYS:standard',
+                    },
+                  }
+                : undefined,
+          },
+        };
       },
     }),
 
