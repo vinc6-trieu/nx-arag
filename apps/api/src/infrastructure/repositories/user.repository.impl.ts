@@ -167,7 +167,7 @@ export class UserRepositoryImpl implements UserRepository {
     }
 
     if (className) {
-      and.push({ student: { class: className } });
+      and.push({ student: { className } });
     }
 
     if (roles && roles.length > 0) {
@@ -244,7 +244,7 @@ export class UserRepositoryImpl implements UserRepository {
             user.student.userId,
             user.student.studentCode,
             user.student.grade,
-            user.student.class,
+            user.student.className,
             user.student.schoolLevel,
             user.student.createdAt,
           )
