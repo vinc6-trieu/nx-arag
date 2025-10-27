@@ -1,16 +1,21 @@
-import { NestFactory } from '@nestjs/core';
+import './instrumentation/datadog-tracer';
+
+import helmet from '@fastify/helmet';
+import underPressure from '@fastify/under-pressure';
 import { ConfigService } from '@nestjs/config';
-import { Logger, LoggerErrorInterceptor, PinoLogger } from 'nestjs-pino';
+import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import underPressure from '@fastify/under-pressure';
-import helmet from '@fastify/helmet';
+import { Logger, LoggerErrorInterceptor, PinoLogger } from 'nestjs-pino';
 import { AppModule } from './app.module.clean';
 
 import { config } from 'dotenv';
-import { ApiResponseInterceptor, GlobalExceptionFilter } from 'packages/utils/src';
+import {
+  ApiResponseInterceptor,
+  GlobalExceptionFilter,
+} from 'packages/utils/src';
 import { join } from 'path';
 
 // Automatically load correct .env file
@@ -32,6 +37,8 @@ async function bootstrap() {
 
   app.useLogger(app.get(Logger));
 
+  app.enableShutdownHooks();
+
   await app.register(helmet, {
     // Disable CSP if necessary for tooling like Swagger; adjust as needed.
     contentSecurityPolicy: false,
@@ -49,7 +56,7 @@ async function bootstrap() {
 
   await app.register(underPressure, {
     exposeStatusRoute: {
-      url: '/api/health/status',
+      routeOpts: { url: '/api/health/status' },
     },
     healthCheck: async () => ({
       status: 'ok',
@@ -58,9 +65,10 @@ async function bootstrap() {
 
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
+
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3000);
-  await app.listen(port);
+  await app.listen({ port, host: '0.0.0.0' });
 
   const logger = app.get(PinoLogger);
   logger.info(

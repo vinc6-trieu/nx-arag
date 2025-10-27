@@ -1,19 +1,25 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import {
+  AadBearerStrategy,
+  IdempotencyInterceptor,
+  RequestIdMiddleware,
+} from '@lib/utils';
 import { CacheModule } from '@nestjs/cache-manager';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import tracer from 'dd-trace';
 import { CaslModule } from 'nest-casl';
 import { LoggerModule } from 'nestjs-pino';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { RequestIdMiddleware, IdempotencyInterceptor, AadBearerStrategy } from '@lib/utils';
 import { UserHook } from '../casl/hooks';
 import { ApplicationModule } from './application/application.module';
+import { datadogConfig, DatadogConfig } from './config/datadog.config';
+import { envValidationSchema } from './config/env.validation';
 import { DomainModule } from './domain/domain.module';
 import { UserRoles } from './domain/entities/user.entity';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
-import { InterfaceModule } from './interface/interface.module';
-import { envValidationSchema } from './config/env.validation';
-import { datadogConfig, DatadogConfig } from './config/datadog.config';
+import { DatadogTracerShutdown } from './instrumentation/datadog-tracer.shutdown';
 import { RateLimitGuard } from './interface/guards/rate-limit.guard';
+import { InterfaceModule } from './interface/interface.module';
 
 @Module({
   imports: [
@@ -48,6 +54,12 @@ import { RateLimitGuard } from './interface/guards/rate-limit.guard';
           configService.get<string>('LOG_LEVEL') ??
           (nodeEnv === 'production' ? 'info' : 'debug');
 
+        const service =
+          configService.get<string>('DD_SERVICE') ?? process.env.DD_SERVICE;
+        const env = configService.get<string>('DD_ENV') ?? process.env.DD_ENV;
+        const version =
+          configService.get<string>('DD_VERSION') ?? process.env.DD_VERSION;
+
         return {
           pinoHttp: {
             level: logLevel,
@@ -57,6 +69,24 @@ import { RateLimitGuard } from './interface/guards/rate-limit.guard';
                 datadog?.service ?? configService.get<string>('DD_SERVICE'),
               version:
                 datadog?.version ?? configService.get<string>('DD_VERSION'),
+              ...(service ? { service } : {}),
+              ...(env ? { env } : {}),
+              ...(version ? { version } : {}),
+            },
+            customProps: () => {
+              const scope = tracer.scope();
+              const span = scope.active();
+
+              if (!span) {
+                return {};
+              }
+
+              const context = span.context();
+
+              return {
+                'dd.trace_id': context.toTraceId(),
+                'dd.span_id': context.toSpanId(),
+              };
             },
             transport:
               nodeEnv !== 'production'
@@ -82,6 +112,7 @@ import { RateLimitGuard } from './interface/guards/rate-limit.guard';
   ],
   providers: [
     AadBearerStrategy,
+    DatadogTracerShutdown,
     {
       provide: APP_GUARD,
       useClass: RateLimitGuard,
