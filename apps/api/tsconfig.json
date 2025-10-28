@@ -10,6 +10,15 @@
   },
   "references": [
     {
+      "path": "../../packages/utils"
+    },
+    {
+      "path": "../../packages/observability"
+    },
+    {
+      "path": "../../packages/config"
+    },
+    {
       "path": "./tsconfig.app.json"
     },
     {
@@ -17,9 +26,6 @@
     },
     {
       "path": "./tsconfig.spec.json"
-    },
-    {
-      "path": "../../packages/utils"
     }
   ]
 }

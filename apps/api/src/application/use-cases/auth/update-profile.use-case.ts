@@ -1,11 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import { Inject, Injectable } from '@nestjs/common';
+import { type Cache } from 'cache-manager';
 import { User } from '../../../domain/entities/user.entity';
 import { AuthDomainService } from '../../../domain/services/auth.domain.service';
 import { UserRepositoryImpl } from '../../../infrastructure/repositories/user.repository.impl';
-import { UpdateProfileRequestDto, UserDto } from '../../dtos/auth.dto';
 import { userProfileCacheKey } from '../../constants/cache-keys';
+import { UpdateProfileRequestDto, UserDto } from '../../dtos/auth.dto';
 
 @Injectable()
 export class UpdateProfileUseCase {

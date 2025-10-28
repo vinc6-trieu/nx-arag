@@ -4,105 +4,50 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
-  Logger,
 } from '@nestjs/common';
-import { datadogTracer } from '@lib/observability';
-import { FastifyReply } from 'fastify';
-import { ApiErrorResponse } from '../common/api-response.types';
+import { dogstatsd } from 'dd-trace';
+import { PinoLogger } from 'nestjs-pino';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(GlobalExceptionFilter.name);
+  constructor(private readonly logger: PinoLogger) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<FastifyReply>();
-    const request = ctx.getRequest();
+    const res = ctx.getResponse();
+    const req = ctx.getRequest();
 
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    const isHttp = exception instanceof HttpException;
+    const status = isHttp
+      ? (exception as HttpException).getStatus()
+      : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const { message, meta } = this.extractMessageAndMeta(exception);
+    // 1) one coarse error metric (optional)
+    dogstatsd.increment('app.error', 1, [
+      `service:${process.env.DD_SERVICE || 'api'}`,
+      `env:${process.env.DD_ENV || 'dev'}`,
+      `status:${status}`,
+    ]);
 
-    const body: ApiErrorResponse = {
-      code: String(status),
-      data: null,
-      duration: undefined,
-      error: true,
-      message,
-      meta,
-      path: request.url,
-      timestamp: new Date().toISOString(),
-    };
+    // 2) one structured log line (pino -> stdout -> Datadog)
+    //    dd-trace injects dd.trace_id/span_id automatically when DD_LOGS_INJECTION=true
+    this.logger.error(
+      {
+        err: exception, // pino will serialize error safely
+        status,
+        route: req?.routerPath ?? req?.url ?? 'unknown',
+      },
+      isHttp ? (exception as HttpException).message : 'Unhandled error',
+    );
 
-    const span = datadogTracer.scope().active();
-
-    if (span) {
-      span.setTag('error', exception as any);
-
-      const errorMessage =
-        exception instanceof Error
-          ? exception.message
-          : typeof exception === 'string'
-            ? exception
-            : message;
-
-      span.setTag('error.message', errorMessage);
-
-      if (exception instanceof Error && exception.stack) {
-        span.setTag('error.stack', exception.stack);
-      }
-    }
-
-    if (exception instanceof Error) {
-      this.logger.error(exception.message, exception.stack);
-    }
-
-    response.status(status).send(body);
-  }
-
-  private extractMessageAndMeta(exception: unknown): {
-    message: string;
-    meta?: Record<string, unknown>;
-  } {
-    if (exception instanceof HttpException) {
-      const response = exception.getResponse();
-
-      if (typeof response === 'string') {
-        return { message: response };
-      }
-
-      if (typeof response === 'object' && response !== null) {
-        const { message, ...rest } = response as Record<string, unknown>;
-
-        if (Array.isArray(message)) {
-          return {
-            message: message.join(', '),
-            meta: {
-              errors: message,
-              ...rest,
-            },
-          };
-        }
-
-        return {
-          message:
-            typeof message === 'string'
-              ? message
-              : exception.message || 'Unexpected error',
-          meta: Object.keys(rest).length ? rest : undefined,
-        };
-      }
-
-      return { message: exception.message || 'Unexpected error' };
-    }
-
-    if (exception instanceof Error) {
-      return { message: exception.message || 'Internal server error' };
-    }
-
-    return { message: 'Internal server error' };
+    // 3) uniform error envelope back to the client
+    res.status(status).send({
+      success: false,
+      error: {
+        message: isHttp
+          ? (exception as HttpException).message
+          : 'Internal server error',
+      },
+    });
   }
 }

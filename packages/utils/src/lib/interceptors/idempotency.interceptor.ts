@@ -1,3 +1,4 @@
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import {
   CallHandler,
   ExecutionContext,
@@ -5,9 +6,8 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
+import { type Cache } from 'cache-manager';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { from, mergeMap, Observable, of } from 'rxjs';
 
@@ -34,8 +34,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
         : 600;
 
     const methods =
-      this.configService.get<string>('IDEMPOTENCY_METHODS') ||
-      'POST,PUT,PATCH';
+      this.configService.get<string>('IDEMPOTENCY_METHODS') || 'POST,PUT,PATCH';
 
     this.methods = new Set(
       methods

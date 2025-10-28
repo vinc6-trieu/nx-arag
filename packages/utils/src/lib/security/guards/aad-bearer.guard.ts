@@ -1,13 +1,9 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  ExecutionContext,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
 export class AzureAdAuthGuard extends AuthGuard('azure-ad-bearer') {
-  override handleRequest(err: any, user: any, _: any, __: ExecutionContext) {
+  override handleRequest(err: any, user: any) {
     if (err || !user) {
       throw err || new UnauthorizedException();
     }

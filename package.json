@@ -5,7 +5,7 @@
   "scripts": {
     "build:api": "yarn nx build api",
     "dev:api": "yarn nx serve api",
-    "start:api": "node app/api/dist/main.js",
+    "start:api": "node apps/api/dist/main.js",
     "clean": "rimraf dist node_modules",
     "lint": "yarn nx lint",
     "lint:fix": "yarn nx lint --fix",
@@ -66,6 +66,7 @@
     "passport-jwt": "^4.0.1",
     "pdf-lib": "^1.17.1",
     "pino": "^9.6.0",
+    "pino-http": "^11.0.0",
     "pino-pretty": "^11.3.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",

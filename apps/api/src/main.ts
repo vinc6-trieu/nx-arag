@@ -1,31 +1,30 @@
-import './instrumentation/datadog-tracer';
+import { config } from 'dotenv';
+import { join } from 'path';
+
+// Load .env FIRST so dd-trace sees DD_* values.
+const envPath =
+  process.env.NODE_ENV === 'production'
+    ? join(__dirname, '.env')
+    : join(__dirname, '../.env');
+
+config({ path: envPath });
+
+// Now tracer + metrics (side-effect init)
 import './instrumentation/datadog-metrics';
+import './instrumentation/datadog-tracer';
 
 import helmet from '@fastify/helmet';
 import underPressure from '@fastify/under-pressure';
+import { requestIdPlugin } from '@lib/utils';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { Logger, LoggerErrorInterceptor, PinoLogger } from 'nestjs-pino';
+import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
+import { ApiResponseInterceptor } from 'packages/utils/src';
 import { AppModule } from './app.module.clean';
-
-import { config } from 'dotenv';
-import {
-  ApiResponseInterceptor,
-  GlobalExceptionFilter,
-} from 'packages/utils/src';
-import { join } from 'path';
-
-// Automatically load correct .env file
-const envPath =
-  process.env.NODE_ENV === 'production'
-    ? join(__dirname, '.env') // for dist
-    : join(__dirname, '../.env'); // for development
-
-config({ path: envPath });
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -53,8 +52,6 @@ async function bootstrap() {
     new ApiResponseInterceptor(),
   );
 
-  app.useGlobalFilters(new GlobalExceptionFilter());
-
   await app.register(underPressure, {
     exposeStatusRoute: {
       routeOpts: { url: '/api/health/status' },
@@ -64,6 +61,14 @@ async function bootstrap() {
     }),
   });
 
+  const fastify = app.getHttpAdapter().getInstance();
+  await fastify.register(requestIdPlugin, {
+    // optional tweaks
+    headerName: 'X-Request-Id',
+    trustIncoming: true,
+    // generator: (req) => `svc-${req.id}`, // example
+  });
+
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
 
@@ -71,8 +76,7 @@ async function bootstrap() {
   const port = configService.get<number>('PORT', 3000);
   await app.listen({ port, host: '0.0.0.0' });
 
-  const logger = app.get(PinoLogger);
-  logger.info(
+  console.log(
     `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
   );
 }

@@ -4,10 +4,10 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { verify } from 'jsonwebtoken';
-import { JWTRequestWSBody } from '../jwt.type';
 import { config } from 'dotenv';
+import { verify } from 'jsonwebtoken';
 import { join } from 'path';
+import { JWTRequestWSBody } from '../jwt.type';
 
 // Automatically load correct .env file
 const envPath =

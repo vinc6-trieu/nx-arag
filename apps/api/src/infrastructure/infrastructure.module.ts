@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { UserRepositoryImpl } from './repositories/user.repository.impl';
 import { ExternalAuthService } from './services/external-auth.service';
 

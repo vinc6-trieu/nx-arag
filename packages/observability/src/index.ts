@@ -1,2 +1,4 @@
-export * from './lib/datadog-tracer';
-export * from './lib/datadog-metrics';
+export * from './lib/logging/nest-logger.module';
+export * from './lib/logging/pino-factory';
+export * from './lib/tracing/init-tracer';
+export * from './lib/tracing/nest-tracing.module';

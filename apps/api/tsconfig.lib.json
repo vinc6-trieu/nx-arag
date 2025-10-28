@@ -19,5 +19,15 @@
     "../../packages/utils/src/**/*.ts",
     "../../packages/**/*.ts"
   ],
-  "references": []
+  "references": [
+    {
+      "path": "../../packages/utils/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/observability/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/config/tsconfig.lib.json"
+    }
+  ]
 }

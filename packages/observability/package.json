@@ -21,7 +21,7 @@
     "name": "observability"
   },
   "dependencies": {
-    "dd-trace": "^5.27.0",
-    "hot-shots": "^11.4.0"
+    "dd-trace": "^5.40.0",
+    "hot-shots": "11.2.0"
   }
 }

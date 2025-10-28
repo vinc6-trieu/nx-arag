@@ -12,10 +12,10 @@ describe('GetProfileUseCase', () => {
   beforeEach(() => {
     cacheStore = {};
     const cacheMock: Partial<Cache> = {
-      get: jest.fn(async (key: string) => cacheStore[key]),
+      get: jest.fn(async (key: string) => cacheStore[key]) as any,
       set: jest.fn(async (key: string, value: unknown) => {
         cacheStore[key] = value;
-      }),
+      }) as any,
     };
     cacheManager = cacheMock as Cache;
 

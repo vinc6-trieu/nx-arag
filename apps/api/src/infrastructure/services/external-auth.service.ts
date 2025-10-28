@@ -1,13 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
+import { PinoLogger } from 'nestjs-pino';
 import { AADProfileDto } from '../../application/dtos/auth.dto';
 
 @Injectable()
 export class ExternalAuthService {
   private googleClient: OAuth2Client;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly logger: PinoLogger,
+  ) {
     this.googleClient = new OAuth2Client(
       this.configService.getOrThrow<string>('GOOGLE_CLIENT_ID'),
     );
@@ -34,6 +38,7 @@ export class ExternalAuthService {
         payload.picture,
       );
     } catch (error) {
+      this.logger.error('Google token verification error:', error);
       throw new Error('Google token verification failed');
     }
   }
@@ -61,6 +66,7 @@ export class ExternalAuthService {
         decoded.picture,
       );
     } catch (error) {
+      this.logger.error('Azure AD token verification error:', error);
       throw new Error('Azure AD token verification failed');
     }
   }

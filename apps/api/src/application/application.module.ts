@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../prisma/prisma.service';
+import { JwtModule } from '@nestjs/jwt';
 import { UserRepositoryImpl } from '../infrastructure/repositories/user.repository.impl';
+import { PrismaService } from '../prisma/prisma.service';
 import { GetProfileUseCase } from './use-cases/auth/get-profile.use-case';
 import { LoginUseCase } from './use-cases/auth/login.use-case';
 import { RegisterUseCase } from './use-cases/auth/register.use-case';

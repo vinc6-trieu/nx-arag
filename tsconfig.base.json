@@ -22,10 +22,10 @@
     "target": "es2022",
     "customConditions": ["development"],
     "paths": {
-      "@lib/observability": ["packages/observability/src/index.ts"],
-      "@lib/observability/*": ["packages/observability/src/lib/*"],
       "@lib/config": ["packages/config/src/index.ts"],
       "@lib/config/*": ["packages/config/src/lib/*"],
+      "@lib/observability": ["packages/observability/src/index.ts"],
+      "@lib/observability/*": ["packages/observability/src/lib/*"],
       "@lib/shared": ["packages/shared/src/index.ts"],
       "@lib/utils": ["packages/utils/src/index.ts"]
     }
