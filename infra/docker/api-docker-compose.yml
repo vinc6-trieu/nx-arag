@@ -7,7 +7,7 @@ services:
     working_dir: /workspace
     command: >-
       sh -c "corepack enable &&
-      yarn install --immutable &&
+      yarn install --frozen-lockfile &&
       yarn dev:api"
     env_file:
       - ../../apps/api/.env.example
@@ -27,7 +27,6 @@ services:
     volumes:
       - ../..:/workspace
       - api-node-modules:/workspace/node_modules
-      - api-yarn-cache:/workspace/.yarn
     labels:
       com.datadoghq.logs: '[{"service":"nx-arag-api","source":"nodejs","env":"${DD_ENV:-development}"}]'
       com.datadoghq.tags.env: ${DD_ENV:-development}
@@ -38,4 +37,3 @@ services:
 
 volumes:
   api-node-modules:
-  api-yarn-cache:
