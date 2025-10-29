@@ -5,6 +5,9 @@ export interface ApiResponseEnvelope<T> {
   error: boolean;
   message: string;
   meta?: Record<string, unknown>;
+  'error_code'?: string;
+  'error_key'?: string;
+  details?: Record<string, unknown>;
   path: string;
   timestamp: string;
 }

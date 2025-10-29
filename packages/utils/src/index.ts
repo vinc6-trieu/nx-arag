@@ -1,6 +1,7 @@
 import requestIdPlugin from './lib/plugins/request-id.plugin';
 
 export * from './lib/common/api-response.types';
+export * from './lib/common/errors';
 export * from './lib/common/remove-accent.util';
 export * from './lib/decorators/authorization.decorator';
 export * from './lib/filters/global-exception.filter';

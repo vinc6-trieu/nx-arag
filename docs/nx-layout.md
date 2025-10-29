@@ -1,21 +1,21 @@
 nx-arag/
 ├─ apps/
-│ ├─ web/ # Next.js app (user chat/UI)
-│ ├─ api/ # NestJS BFF (QA orchestrator, auth/policy)
-│ ├─ search-svc/ # Node service: hybrid BM25 + vector retrieval
-│ ├─ ingest-svc/ # Node service: convert/OCR/DLP/chunk/embed
-│ └─ ground-svc/ # Node service: graph build/search (KG)
+│ └─ api/              # NestJS BFF (auth, policy, RAG orchestration)
+│    └─ src/…          # domain/application/interface/instrumentation
 │
 ├─ packages/
-│ ├─ shared/ # Domain types + ports/interfaces
-│ ├─ observability/ # Config provider (envs)
-│ │ └─ datadog-tracer
-│ ├─ proto/ # gRPC/protobuf contracts (Buf layout)
-│ └─ utils/ # Common helpers (logging, tracing)
+│ ├─ shared/           # Cross-service contracts, CASL setup, DTOs
+│ ├─ utils/            # Nest interceptors, logging helpers, common glue
+│ ├─ observability/    # Datadog tracer bootstrap & metrics utilities
+│ └─ config/           # Environment configuration helpers (Joi-backed)
 │
 ├─ infra/
-│ └─ docker
+│ └─ docker/
+│    ├─ docker-compose.yml   # Local API + Postgres + Datadog stack
+│    └─ datadog/             # Agent log collection profiles
 │
+├─ Dockerfile.dev       # Dev image used by docker-compose
+├─ docs/                # Architecture and layout references
 ├─ nx.json
 ├─ package.json
 ├─ tsconfig.base.json

@@ -1,3 +1,4 @@
+import { AppError, ErrorKey } from '@lib/utils';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -20,7 +21,7 @@ export class RegisterUseCase {
     // Check if user already exists
     const existingUser = await this.userRepository.findByEmail(request.email);
     if (existingUser) {
-      throw new Error('User already exists');
+      throw new AppError(ErrorKey.AUTH_USER_ALREADY_EXISTS);
     }
 
     // Hash password

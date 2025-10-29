@@ -1,3 +1,4 @@
+import { AppError, ErrorKey } from '@lib/utils';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
 import { type Cache } from 'cache-manager';
@@ -24,7 +25,7 @@ export class GetProfileUseCase {
     const user = await this.userRepository.findById(userId);
 
     if (!user) {
-      throw new Error('User not found');
+      throw new AppError(ErrorKey.AUTH_USER_NOT_FOUND);
     }
 
     const profile = this.mapToUserDto(user);

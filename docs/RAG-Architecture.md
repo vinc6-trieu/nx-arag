@@ -23,20 +23,21 @@
 
 ```
 apps/
-  web/           # Next.js frontend
-  api/           # NestJS API orchestrator
-  ingest-svc/    # NestJS microservice: ingestion pipeline
-  search-svc/    # NestJS microservice: hybrid retrieval
-  ground-svc/    # NestJS microservice: KG builder/query
+  api/           # NestJS API orchestrator (auth, policy, answer pipeline)
 packages/
-  shared/        # Ports, interfaces, and types
-  config/        # Env configuration provider
-  proto/         # gRPC protobuf contracts
-  utils/         # Common utilities (logging, tracing)
+  shared/        # Ports, interfaces, and cross-service DTOs
+  config/        # Environment configuration helpers (Joi schemas)
+  observability/ # Datadog tracer bootstrap and metrics helpers
+  utils/         # Logging, interceptors, reusable Nest glue
 infra/
-  docker-compose.yml
-  migrations/
+  docker/
+    docker-compose.yml
+    datadog/     # Agent log collection config
+Dockerfile.dev
+docs/
 ```
+
+_Future services (`web`, `ingest-svc`, `search-svc`, `ground-svc`) remain on the roadmap but are not present in the repository yet._
 
 ---
 
@@ -159,15 +160,21 @@ Auth → Policy filter → Search → Optional VLM (images/tables) → LLM gener
 
 ## 10. Observability & SLOs
 
-- OpenTelemetry spans
-- p95 latency ≤ 2.5s
-- ≥95% answers have ≥1 citation
-- Structured logs, trace IDs
-- Metrics for cost, cache hits, refusal rate
+- Datadog APM via `dd-trace` (bootstrap in `packages/observability`, wired in `apps/api/src/instrumentation`)
+- DogStatsD metrics emitted from HTTP interceptors (`packages/utils`) and domain events
+- Structured JSON logs via `pino` with Datadog log injection enabled
+- Datadog Agent (see `infra/docker/docker-compose.yml`) collects traces, metrics, and container logs locally
+- p95 latency ≤ 2.5s, ≥95% answers with ≥1 citation, refusal rate and cost tracked as core KPIs
 
 ---
 
 ## 11. Deployment
+
+**Local development (single machine):**
+
+- `infra/docker/docker-compose.yml` spins up the API (dev image), Postgres, and a Datadog agent
+- `Dockerfile.dev` installs dependencies, generates Prisma client, then bind-mounts the workspace for hot reloads
+- DogStatsD and trace ports (`8125/udp`, `8126/tcp`) are exposed for host-side inspection
 
 **Eco tier (2 VMs):**
 

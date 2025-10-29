@@ -38,9 +38,6 @@ export function initDatadogTracer(opts: DatadogTracerInitOptions = {}): Tracer {
     logInjection, // supported
     // Other toggles via env ONLY:
     // DD_RUNTIME_METRICS=true
-    // DD_PROFILING_ENABLED=true
-    // DD_TRACE_ANALYTICS_ENABLED=true
-    // DD_TRACE_SAMPLE_RATE=1
   });
 
   return ddtrace as Tracer;

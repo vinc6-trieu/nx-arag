@@ -49,7 +49,6 @@ export class ApiResponseInterceptor<T>
         const elapsed = Date.now() - start;
         const status = res?.statusCode || 200;
 
-        console.log('ApiResponseInterceptor - status:', status);
         // Metrics (use histogram for timing; count for requests)
         dogstatsd.histogram('http.server.request', elapsed, [
           ...tagsBase,

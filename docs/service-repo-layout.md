@@ -1,11 +1,14 @@
-apps/<service>/src/
+apps/api/src/
 │
-├─ domain/ # entities, value objects
-├─ application/ # use cases (pure logic)
-├─ infrastructure/ # adapters (DB, vector, Meili, OCR…)
-├─ prisma/ # Prisma schema & Nest services (e.g. UserCredential isolates secrets)
-├─ interfaces/ # delivery (HTTP, gRPC, SSE)
-├─ config/
-│  ├─ env.validation.ts # Joi schema for process.env (incl. Datadog defaults)
-│  └─ datadog.config.ts # ConfigService namespace for instrumentation/logging
-└─ main.ts # bootstrap / NestFactory
+├─ application/        # Use cases, DTOs, and application services
+├─ domain/             # Entities, value objects, repository contracts
+├─ infrastructure/     # Prisma repositories, external service adapters
+├─ interface/          # Controllers, guards, filters, interceptors
+├─ instrumentation/    # Datadog tracer bootstrap & metrics emitters
+├─ casl/               # Authorization policies and ability factory
+├─ prisma/             # Prisma schema, migrations, and generated client
+├─ assets/             # Seed/config artifacts bundled with the API
+├─ app.module.clean.ts # Module wiring entrypoint for the clean architecture layout
+└─ main.ts             # Nest application bootstrap
+
+Environment configuration and shared validation schemas live in `packages/config`. Reusable tracing/logging utilities live in `packages/observability` and `packages/utils`.

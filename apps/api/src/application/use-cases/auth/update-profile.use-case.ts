@@ -1,3 +1,4 @@
+import { AppError, ErrorKey } from '@lib/utils';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
 import { type Cache } from 'cache-manager';
@@ -21,7 +22,7 @@ export class UpdateProfileUseCase {
     const user = await this.userRepository.findById(userId);
 
     if (!user) {
-      throw new Error('User not found');
+      throw new AppError(ErrorKey.AUTH_USER_NOT_FOUND);
     }
 
     // Validate role transition if roles are being updated
@@ -29,7 +30,7 @@ export class UpdateProfileUseCase {
       request.roles &&
       !AuthDomainService.validateRoleTransition(user.roles, request.roles)
     ) {
-      throw new Error('Invalid role transition');
+      throw new AppError(ErrorKey.AUTH_INVALID_ROLE_TRANSITION);
     }
 
     // Update user

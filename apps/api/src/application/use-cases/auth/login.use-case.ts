@@ -1,3 +1,4 @@
+import { AppError, ErrorKey } from '@lib/utils';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -20,11 +21,11 @@ export class LoginUseCase {
     const user = await this.userRepository.findByEmail(request.email);
 
     if (!user) {
-      throw new Error('Invalid credentials');
+      throw new AppError(ErrorKey.AUTH_INVALID_CREDENTIALS);
     }
 
     if (!user.password) {
-      throw new Error('User has no password set');
+      throw new AppError(ErrorKey.AUTH_PASSWORD_NOT_SET);
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -32,7 +33,7 @@ export class LoginUseCase {
       user.password,
     );
     if (!isPasswordValid) {
-      throw new Error('Invalid credentials');
+      throw new AppError(ErrorKey.AUTH_INVALID_CREDENTIALS);
     }
 
     const accessToken = this.jwtService.sign({

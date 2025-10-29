@@ -1,0 +1,13 @@
+## Explicit log collection for the nx-arag API container
+## This complements Datadog's container labels so we can disable
+## DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL while still harvesting logs.
+logs:
+  - type: docker
+    container_names:
+      - nx-arag-api
+    service: nx-arag-api
+    source: nodejs
+    tags:
+      - 'env:{{ env "DD_ENV" | default "development" }}'
+      - 'version:{{ env "DD_VERSION" | default "local" }}'
+    auto_multi_line_detection: true

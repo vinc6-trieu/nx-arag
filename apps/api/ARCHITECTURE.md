@@ -6,38 +6,16 @@ This API application has been restructured following **Hexagonal/Clean Architect
 
 ```
 apps/api/src/
-├── domain/                    # Domain Layer (Business Logic)
-│   ├── entities/             # Domain Entities
-│   │   └── user.entity.ts
-│   ├── value-objects/        # Value Objects
-│   │   └── auth.vo.ts
-│   ├── repositories/         # Repository Interfaces
-│   │   └── user.repository.interface.ts
-│   ├── services/             # Domain Services
-│   │   └── auth.domain.service.ts
-│   └── domain.module.ts
-├── application/              # Application Layer (Use Cases)
-│   ├── dtos/                 # Data Transfer Objects
-│   │   └── auth.dto.ts
-│   ├── use-cases/           # Use Cases
-│   │   └── auth/
-│   │       ├── login.use-case.ts
-│   │       ├── register.use-case.ts
-│   │       ├── get-profile.use-case.ts
-│   │       └── update-profile.use-case.ts
-│   └── application.module.ts
-├── infrastructure/          # Infrastructure Layer (External Concerns)
-│   ├── repositories/        # Repository Implementations
-│   │   └── user.repository.impl.ts
-│   ├── services/            # External Services
-│   │   └── external-auth.service.ts
-│   └── infrastructure.module.ts
-├── interface/               # Interface Layer (Controllers, Guards)
-│   ├── controllers/         # Controllers
-│   │   ├── auth.controller.ts
-│   │   └── health.controller.ts
-│   └── interface.module.ts
-└── app.module.clean.ts      # Main Application Module
+├── app.module.clean.ts      # Module composition for Clean Architecture
+├── main.ts                  # Nest bootstrap
+├── application/             # Use cases, DTOs, orchestrators
+├── domain/                  # Entities, value objects, repository contracts
+├── infrastructure/          # Prisma repositories & external adapters
+├── interface/               # Controllers, guards, filters, interceptors
+├── instrumentation/         # Datadog tracer bootstrap & metrics helpers
+├── casl/                    # Authorization policies and ability factory
+├── prisma/                  # Prisma schema, migrations, providers
+└── assets/                  # Seed/config resources bundled at runtime
 ```
 
 ## Layer Responsibilities
@@ -65,7 +43,18 @@ apps/api/src/
 
 - **Controllers**: Handle HTTP requests/responses
 - **Guards**: Authentication and authorization
-- **Interceptors**: Cross-cutting concerns
+- **Interceptors & Filters**: Cross-cutting concerns (logging, responses, error shaping)
+
+### 5. Instrumentation (`/instrumentation`)
+
+- **Tracer bootstrap**: `datadog-tracer.ts` initializes `dd-trace` via `packages/observability`
+- **Metrics**: DogStatsD helpers that emit timings/counters for interceptors and use cases
+- **Shutdown hooks**: Ensures tracers flush before the process exits
+
+### 6. Authorization (`/casl`)
+
+- **Ability factory**: Centralizes CASL rule creation
+- **Policy definitions**: Declarative access control alongside the domain
 
 ## Key Benefits
 
@@ -136,6 +125,8 @@ The old structure has been preserved in `/app` directory for reference. The new 
 - **Repositories** moved to infrastructure with interfaces in domain
 - **DTOs** moved to application layer
 - **Entities** created in domain layer
+- **Datadog instrumentation** centralized under `/instrumentation` with helpers in `packages/observability`
+- **Configuration schemas** consolidated in `packages/config` for reuse across services
 
 ## Best Practices
 
