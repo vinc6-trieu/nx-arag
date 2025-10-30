@@ -5,7 +5,6 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { dogstatsd } from 'dd-trace';
 import { PinoLogger } from 'nestjs-pino';
 import { ApiErrorResponse } from '../common/api-response.types';
 import {
@@ -14,6 +13,7 @@ import {
   ErrorKey,
   getErrorCatalogEntry,
 } from '../common/errors';
+import { logErrorWithTelemetry } from '@lib/observability';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -32,25 +32,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       ? (exception as HttpException).getStatus()
       : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    // 1) one coarse error metric (optional)
-    dogstatsd.increment('app.error', 1, [
-      `service:${process.env.DD_SERVICE || 'api'}`,
-      `env:${process.env.DD_ENV || 'dev'}`,
-      `status:${status}`,
-    ]);
+    logErrorWithTelemetry(this.logger, exception, {
+      status,
+      route: path,
+      message: isHttp
+        ? (exception as HttpException).message
+        : 'Unhandled error',
+    });
 
-    // 2) one structured log line (pino -> stdout -> Datadog)
-    //    dd-trace injects dd.trace_id/span_id automatically when DD_LOGS_INJECTION=true
-    this.logger.error(
-      {
-        err: exception, // pino will serialize error safely
-        status,
-        route: path,
-      },
-      isHttp ? (exception as HttpException).message : 'Unhandled error',
-    );
-
-    // 3) uniform error envelope back to the client
+    // uniform error envelope back to the client
     const baseCatalog = getErrorCatalogEntry(ErrorKey.COMMON_INTERNAL_SERVER_ERROR);
 
     let responsePayload: ApiErrorResponse = {

@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package ingest.v1;
+
+service IngestService {
+  rpc SubmitDocument(IngestDocumentRequest) returns (SubmitDocumentResponse);
+  rpc GetJobStatus(GetJobStatusRequest) returns (GetJobStatusResponse);
+  rpc Health(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+enum JobStatus {
+  JOB_STATUS_UNSPECIFIED = 0;
+  JOB_STATUS_PENDING = 1;
+  JOB_STATUS_PROCESSING = 2;
+  JOB_STATUS_COMPLETED = 3;
+  JOB_STATUS_FAILED = 4;
+}
+
+message IngestDocumentRequest {
+  string tenant_id = 1;
+  string requested_by = 2;
+  string document_id = 3;
+  string title = 4;
+  oneof source {
+    string source_uri = 5;
+    bytes inline_bytes = 6;
+  }
+  string content_type = 7;
+  map<string, string> metadata = 8;
+  string visibility = 9;
+  string retention_policy = 10;
+}
+
+message SubmitDocumentResponse {
+  string job_id = 1;
+  string document_id = 2;
+  JobStatus status = 3;
+}
+
+message GetJobStatusRequest {
+  string job_id = 1;
+}
+
+message ChunkSummary {
+  string chunk_id = 1;
+  uint32 token_count = 2;
+  string preview = 3;
+}
+
+message GetJobStatusResponse {
+  string job_id = 1;
+  string document_id = 2;
+  JobStatus status = 3;
+  string error_message = 4;
+  repeated ChunkSummary chunks = 5;
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+}

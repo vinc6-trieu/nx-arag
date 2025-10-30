@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { logErrorWithTelemetry } from '@lib/observability';
 import { OAuth2Client } from 'google-auth-library';
 import { PinoLogger } from 'nestjs-pino';
 import { AADProfileDto } from '../../application/dtos/auth.dto';
@@ -38,7 +39,10 @@ export class ExternalAuthService {
         payload.picture,
       );
     } catch (error) {
-      this.logger.error('Google token verification error:', error);
+      logErrorWithTelemetry(this.logger, error, {
+        message: 'Google token verification failed',
+        tags: ['provider:google'],
+      });
       throw new Error('Google token verification failed');
     }
   }
@@ -66,7 +70,10 @@ export class ExternalAuthService {
         decoded.picture,
       );
     } catch (error) {
-      this.logger.error('Azure AD token verification error:', error);
+      logErrorWithTelemetry(this.logger, error, {
+        message: 'Azure AD token verification failed',
+        tags: ['provider:azure-ad'],
+      });
       throw new Error('Azure AD token verification failed');
     }
   }

@@ -7,8 +7,11 @@ import {
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
-// ⬅️ use your StatsD client (hot-shots), not dd-trace
-import { dogstatsd } from 'dd-trace';
+import {
+  histogramMetric,
+  incrementMetric,
+  logErrorWithTelemetry,
+} from '@lib/observability';
 import { ApiResponseEnvelope } from '../common/api-response.types';
 
 function coarseRoute(req: any): string {
@@ -35,10 +38,9 @@ export class ApiResponseInterceptor<T>
 
     const method = (req?.method || 'GET').toUpperCase();
     const route = coarseRoute(req);
+    const requestLogger = req?.log ?? req?.raw?.log;
 
     const tagsBase = [
-      `service:${process.env.DD_SERVICE || 'api'}`,
-      `env:${process.env.DD_ENV || 'dev'}`,
       `method:${method}`,
       `route:${route}`,
     ];
@@ -50,11 +52,11 @@ export class ApiResponseInterceptor<T>
         const status = res?.statusCode || 200;
 
         // Metrics (use histogram for timing; count for requests)
-        dogstatsd.histogram('http.server.request', elapsed, [
+        histogramMetric('http.server.request', elapsed, [
           ...tagsBase,
           `status:${status}`,
         ]);
-        dogstatsd.increment('http.server.request.count', 1, [
+        incrementMetric('http.server.request.count', 1, [
           ...tagsBase,
           `status:${status}`,
         ]);
@@ -75,18 +77,28 @@ export class ApiResponseInterceptor<T>
 
       // error path: record metrics and rethrow (your exception filter shapes the error)
       catchError((err) => {
-        console.log('ApiResponseInterceptor - caught error:', err);
         const elapsed = Date.now() - start;
         const status = res?.statusCode || err?.status || err?.statusCode || 500;
 
-        dogstatsd.histogram('http.server.request', elapsed, [
+        histogramMetric('http.server.request', elapsed, [
           ...tagsBase,
           `status:${status}`,
         ]);
-        dogstatsd.increment('http.server.request.count', 1, [
+        incrementMetric('http.server.request.count', 1, [
           ...tagsBase,
           `status:${status}`,
         ]);
+
+        logErrorWithTelemetry(requestLogger, err, {
+          status,
+          route,
+          tags: [`method:${method}`],
+          context: {
+            elapsed,
+            requestId: req?.id ?? req?.requestContext?.id,
+          },
+          message: 'Unhandled request pipeline error',
+        });
 
         return throwError(() => err);
       }),

@@ -1,5 +1,3 @@
-/* Avoid ESM/named-export interop issues with Nx/webpack by using CJS require */
-
 const ddtrace = require('dd-trace') as any;
 
 export type Tracer = import('dd-trace').Tracer;
@@ -9,6 +7,17 @@ export interface DatadogTracerInitOptions {
   env?: string;
   version?: string;
   logInjection?: boolean;
+  grpc?: {
+    enabled?: boolean;
+    service?: string;
+    /**
+     * Provide metadata keys (array) or a filter function for the Datadog gRPC plugin.
+     * Useful for forwarding values like request IDs onto span tags.
+     */
+    metadata?:
+      | string[]
+      | ((values: Record<string, unknown>) => Record<string, unknown>);
+  };
 }
 
 /**
@@ -39,6 +48,20 @@ export function initDatadogTracer(opts: DatadogTracerInitOptions = {}): Tracer {
     // Other toggles via env ONLY:
     // DD_RUNTIME_METRICS=true
   });
+
+  const grpcConfig = opts.grpc ?? {};
+  if (grpcConfig.enabled ?? true) {
+    try {
+      ddtrace.use('grpc', {
+        service: grpcConfig.service ?? service,
+        metadata: grpcConfig.metadata,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+
+      console.warn(`[dd-trace] Failed to enable gRPC plugin: ${msg}`);
+    }
+  }
 
   return ddtrace as Tracer;
 }

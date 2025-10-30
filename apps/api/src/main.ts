@@ -16,6 +16,7 @@ import './instrumentation/datadog-tracer';
 import helmet from '@fastify/helmet';
 import underPressure from '@fastify/under-pressure';
 import { requestIdPlugin } from '@lib/utils';
+import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import {
@@ -71,12 +72,20 @@ async function bootstrap() {
 
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3000);
   await app.listen({ port, host: '0.0.0.0' });
 
-  console.log(
+  const appLogger = app.get(Logger);
+  appLogger.log(
     `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
   );
 }

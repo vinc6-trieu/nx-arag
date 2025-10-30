@@ -4,14 +4,16 @@ import { Inject, Injectable } from '@nestjs/common';
 import { type Cache } from 'cache-manager';
 import { User } from '../../../domain/entities/user.entity';
 import { AuthDomainService } from '../../../domain/services/auth.domain.service';
-import { UserRepositoryImpl } from '../../../infrastructure/repositories/user.repository.impl';
+import { USER_REPOSITORY } from '../../../domain/repositories/user.repository.interface';
+import type { UserRepository } from '../../../domain/repositories/user.repository.interface';
 import { userProfileCacheKey } from '../../constants/cache-keys';
 import { UpdateProfileRequestDto, UserDto } from '../../dtos/auth.dto';
 
 @Injectable()
 export class UpdateProfileUseCase {
   constructor(
-    private readonly userRepository: UserRepositoryImpl,
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: UserRepository,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 

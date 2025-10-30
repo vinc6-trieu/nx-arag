@@ -1,1 +1,3 @@
-export * from './lib/common-dto.module';
+export * from './lib/shared.module';
+export * from './lib/search';
+export * from './lib/ingest';

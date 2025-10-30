@@ -1,0 +1,35 @@
+{
+  "name": "@nx-arag/search-svc",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "name": "search-svc",
+    "targets": {
+      "build": {
+        "executor": "nx:run-commands",
+        "outputs": ["{workspaceRoot}/dist/apps/search-svc"],
+        "options": {
+          "command": "tsc -p apps/search-svc/tsconfig.app.json"
+        }
+      },
+      "serve": {
+        "executor": "nx:run-commands",
+        "dependsOn": ["build"],
+        "options": {
+          "command": "node dist/apps/search-svc/apps/search-svc/src/main.js"
+        }
+      },
+      "lint": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "eslint \"apps/search-svc/src/**/*.ts\""
+        }
+      },
+      "test": {
+        "options": {
+          "passWithNoTests": true
+        }
+      }
+    }
+  }
+}

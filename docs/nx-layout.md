@@ -1,7 +1,11 @@
 nx-arag/
 ├─ apps/
-│ └─ api/              # NestJS BFF (auth, policy, RAG orchestration)
-│    └─ src/…          # domain/application/interface/instrumentation
+│ ├─ api/              # NestJS BFF (auth, policy, RAG orchestration)
+│ │  └─ src/…          # domain/application/interface/instrumentation
+│ ├─ search-svc/       # gRPC retrieval service (BM25/vector stub)
+│ │  └─ src/…          # core gRPC handlers, instrumentation
+│ └─ ingest-svc/       # gRPC ingestion orchestrator (stubbed pipeline)
+│    └─ src/…          # queue intake + instrumentation
 │
 ├─ packages/
 │ ├─ shared/           # Cross-service contracts, CASL setup, DTOs
@@ -11,7 +15,7 @@ nx-arag/
 │
 ├─ infra/
 │ └─ docker/
-│    ├─ docker-compose.yml   # Local API + Postgres + Datadog stack
+│    ├─ docker-compose.yml   # Local API + services + Postgres/Meili/Redis/MinIO stack
 │    └─ datadog/             # Agent log collection profiles
 │
 ├─ Dockerfile.dev       # Dev image used by docker-compose

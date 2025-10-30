@@ -1,9 +1,10 @@
 import { AppError, ErrorKey } from '@lib/utils';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../../../domain/entities/user.entity';
-import { UserRepositoryImpl } from '../../../infrastructure/repositories/user.repository.impl';
+import { USER_REPOSITORY } from '../../../domain/repositories/user.repository.interface';
+import type { UserRepository } from '../../../domain/repositories/user.repository.interface';
 import {
   LoginResponseDto,
   RegisterRequestDto,
@@ -13,7 +14,8 @@ import {
 @Injectable()
 export class RegisterUseCase {
   constructor(
-    private readonly userRepository: UserRepositoryImpl,
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: UserRepository,
     private readonly jwtService: JwtService,
   ) {}
 

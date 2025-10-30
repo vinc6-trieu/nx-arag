@@ -1,0 +1,36 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../../dist/apps/search-svc",
+    "rootDir": "../../",
+    "module": "Node16",
+    "target": "es2022",
+    "types": ["node"],
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "emitDeclarationOnly": false,
+    "declaration": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "../../packages/shared/src/**/*.ts",
+    "../../packages/utils/src/**/*.ts",
+    "../../packages/observability/src/**/*.ts",
+    "../../packages/config/src/**/*.ts"
+  ],
+  "exclude": ["out-tsc", "dist", "src/**/*.spec.ts", "src/**/*.test.ts"],
+  "references": [
+    {
+      "path": "../../packages/shared/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/utils/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/observability/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/config/tsconfig.lib.json"
+    }
+  ]
+}

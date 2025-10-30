@@ -1,12 +1,12 @@
 import { Cache } from 'cache-manager';
 import { User } from '../../../domain/entities/user.entity';
-import { UserRepositoryImpl } from '../../../infrastructure/repositories/user.repository.impl';
+import type { UserRepository } from '../../../domain/repositories/user.repository.interface';
 import { GetProfileUseCase } from './get-profile.use-case';
 
 describe('GetProfileUseCase', () => {
   let cacheStore: Record<string, unknown>;
   let cacheManager: Cache;
-  let userRepository: jest.Mocked<UserRepositoryImpl>;
+  let userRepository: jest.Mocked<UserRepository>;
   let useCase: GetProfileUseCase;
 
   beforeEach(() => {
@@ -21,7 +21,7 @@ describe('GetProfileUseCase', () => {
 
     userRepository = {
       findById: jest.fn(),
-    } as unknown as jest.Mocked<UserRepositoryImpl>;
+    } as unknown as jest.Mocked<UserRepository>;
 
     useCase = new GetProfileUseCase(userRepository, cacheManager);
   });

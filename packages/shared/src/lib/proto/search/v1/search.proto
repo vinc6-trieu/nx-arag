@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package search.v1;
+
+service SearchService {
+  rpc Query(SearchQueryRequest) returns (SearchQueryResponse);
+  rpc Health(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message SearchQueryRequest {
+  string query = 1;
+  map<string, string> filters = 2;
+  uint32 bm25_top_k = 3;
+  uint32 vector_top_k = 4;
+  uint32 final_top_k = 5;
+  bool use_graph_boost = 6;
+}
+
+message SearchHit {
+  string doc_id = 1;
+  string chunk_id = 2;
+  string title = 3;
+  string snippet = 4;
+  double score = 5;
+  repeated string highlights = 6;
+}
+
+message SearchQueryResponse {
+  repeated SearchHit hits = 1;
+  uint32 latency_ms = 2;
+  string trace_id = 3;
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+}

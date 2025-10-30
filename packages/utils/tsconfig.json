@@ -9,5 +9,9 @@
     "tsBuildInfoFile": "../../dist/.tsbuildinfo/utils.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
-  "references": []
+  "references": [
+    {
+      "path": "../observability"
+    }
+  ]
 }

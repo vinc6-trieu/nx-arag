@@ -4,27 +4,25 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { config } from 'dotenv';
-import { join } from 'path';
-
-// Automatically load correct .env file
-const envPath =
-  process.env.NODE_ENV === 'production'
-    ? join(__dirname, '.env') // for dist
-    : join(__dirname, '../.env'); // for development
-
-config({ path: envPath });
-
-const SERVICE_API_KEY = process.env.AI_SERVICE_API_KEY;
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
+  constructor(private readonly configService: ConfigService) {}
+
   canActivate(context: ExecutionContext): boolean {
+    const expectedApiKey =
+      this.configService.get<string>('AI_SERVICE_API_KEY') ?? '';
+
+    if (!expectedApiKey) {
+      throw new UnauthorizedException('API key not configured');
+    }
+
     if (context.getType<'http' | 'ws'>() === 'http') {
       const req = context.switchToHttp().getRequest();
       const key = req.headers['x-api-key'];
-      console.log('API Key Guard:', key, SERVICE_API_KEY);
-      if (typeof key !== 'string' || key !== SERVICE_API_KEY) {
+
+      if (typeof key !== 'string' || key !== expectedApiKey) {
         throw new UnauthorizedException('Invalid API key');
       }
       return true;

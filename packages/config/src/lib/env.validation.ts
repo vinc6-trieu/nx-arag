@@ -9,6 +9,14 @@ export const envValidationSchema = Joi.object({
   LOG_LEVEL: Joi.string().default('debug'),
   JWT_SECRET: Joi.string().min(1).required(),
   GOOGLE_CLIENT_ID: Joi.string().min(1).required(),
+  AUTH_URL: Joi.string().uri().optional(),
+  AI_SERVICE_API_KEY: Joi.string().min(1).required(),
+  AZ_CLIENT_ID: Joi.string().allow('').optional(),
+  AZ_CLIENT_SECRET: Joi.string().allow('').optional(),
+  AZ_TENANT_ID: Joi.string().allow('').optional(),
+  SEARCH_SERVICE_GRPC_URL: Joi.string()
+    .pattern(/^[^:]+:\d+$/)
+    .default('127.0.0.1:50051'),
   CACHE_TTL_SECONDS: Joi.number().integer().min(1).default(300),
   CACHE_MAX_ITEMS: Joi.number().integer().min(1).default(1000),
   RATE_LIMIT_MAX: Joi.number().integer().min(1).default(100),
@@ -25,5 +33,6 @@ export const envValidationSchema = Joi.object({
       Joi.string().ip({ version: ['ipv4', 'ipv6'], cidr: 'forbidden' }),
     )
     .default('127.0.0.1'),
+  DD_DOGSTATSD_PORT: Joi.number().port().default(8125),
   DD_TRACE_ENABLED: Joi.boolean().default(false),
 }).unknown(true);

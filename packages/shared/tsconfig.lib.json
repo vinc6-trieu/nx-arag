@@ -1,16 +1,20 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
     "rootDir": "src",
-    "emitDeclarationOnly": true,
-    "forceConsistentCasingInFileNames": true,
+    "outDir": "../../dist/packages/shared",
     "types": ["node"],
-    "target": "es2021",
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "node16",
+    "forceConsistentCasingInFileNames": true,
     "strictNullChecks": true,
     "noImplicitAny": true,
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*.ts"],
-  "references": []
+  "include": ["src/**/*.ts"]
 }

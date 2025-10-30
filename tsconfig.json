@@ -17,6 +17,12 @@
     },
     {
       "path": "./packages/config"
+    },
+    {
+      "path": "./apps/ingest-svc"
+    },
+    {
+      "path": "./apps/search-svc"
     }
   ]
 }

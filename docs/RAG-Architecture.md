@@ -10,9 +10,9 @@
 
 - `web`: Next.js UI (chat, search, publisher console)
 - `api`: BFF / Orchestrator (authn/authz, policy filtering, answer pipeline)
-- `ingest-svc`: document conversion, OCR, DLP, chunking, embedding, indexing
-- `search-svc`: hybrid retrieval (BM25 + vector + KG boost) + re-rank
-- `ground-svc`: lightweight knowledge graph build and graph query
+- `search-svc`: gRPC retrieval endpoint (BM25 + vector fusion; currently stubbed data)
+- `ingest-svc`: document conversion, OCR, DLP, chunking, embedding, indexing *(planned)*
+- `ground-svc`: lightweight knowledge graph build and graph query *(planned)*
 
 **Data plane:** Postgres+pgvector, Meilisearch, S3/MinIO, Redis  
 **Control plane:** OIDC SSO, Cedar/Oso policy engine, OpenTelemetry traces, metrics, and logs
@@ -37,7 +37,7 @@ Dockerfile.dev
 docs/
 ```
 
-_Future services (`web`, `ingest-svc`, `search-svc`, `ground-svc`) remain on the roadmap but are not present in the repository yet._
+_Future services (`web`, `ingest-svc`, `ground-svc`) remain on the roadmap. The `search-svc` gRPC service now ships alongside the API and returns stubbed retrieval payloads until the indexing backends land._
 
 ---
 
@@ -119,12 +119,27 @@ Events:
 5. Cross-encoder re-rank (ONNX small model)
 6. Return 8–12 final chunks with metadata
 
+### 6.1 Search Service Implementation Notes
+
+- Service lives at `apps/search-svc` and boots a Nest microservice bound to gRPC transport with `SearchService.Query` and `SearchService.Health` methods defined in `packages/shared/src/lib/proto/search/v1/search.proto`.
+- Contracts are shared through `@lib/shared` (`SearchQueryInput`, `SearchQueryResponseDto`, etc.) so HTTP controllers can forward requests directly to gRPC clients without ad-hoc mapping.
+- The current implementation produces deterministic stub hits; plug real BM25/vector adapters behind `SearchService.query` once the indexing stores are wired up.
+- Local dev start:
+  - Build: `yarn tsc -p apps/search-svc/tsconfig.app.json`
+  - Run: `node dist/apps/search-svc/apps/search-svc/src/main.js`
+  - Docker Compose builds+launches the same sequence via the new `search-svc` container.
+
 ---
 
 ## 7. Orchestration (`api`)
 
 **Flow:**  
-Auth → Policy filter → Search → Optional VLM (images/tables) → LLM generation → SSE stream → Audit log
+Auth → Policy filter → gRPC search fan-out → Optional VLM (images/tables) → LLM generation → SSE stream → Audit log
+
+**Search integration:**
+- `InterfaceModule` exposes `/api/search` POST and `/api/search/health` GET endpoints.
+- `SearchDocumentsUseCase` / `SearchHealthUseCase` call into the `SearchGrpcService`, which wraps a `ClientGrpc` configured with the shared proto and `SEARCH_SERVICE_GRPC_URL` env var (default `127.0.0.1:50051`).
+- Telemetry and request-id interceptors apply on both server and client sides for Datadog correlation.
 
 **Semantic Cache:** Redis key  
 `qa:{hash(query)}:{hash(claims)}`

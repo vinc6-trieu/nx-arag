@@ -6,6 +6,7 @@ RUN corepack enable
 # Copy only manifests to leverage caching (add more package.json paths as needed)
 COPY package.json yarn.lock ./
 COPY apps/api/package.json apps/api/
+COPY apps/ingest-svc/package.json apps/ingest-svc/
 COPY packages/**/package.json packages/**/
 
 # Yarn cache speeds things up between builds
@@ -18,4 +19,3 @@ RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 FROM base AS dev
 WORKDIR /workspace
 CMD ["yarn","dev:api"]
-

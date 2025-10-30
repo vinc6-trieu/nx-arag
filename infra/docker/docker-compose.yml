@@ -27,12 +27,12 @@ services:
     container_name: nx-arag-api
     working_dir: /workspace
     # Ensure Prisma client is generated before starting the dev server
-    command: sh -c "yarn db:generate:api && yarn dev:api"
+    command: sh -c "yarn db:generate:api && yarn db:deploy:api && yarn start:api"
     env_file:
       - ./.env
       - ../../apps/api/.env
     ports:
-      - '${PORT}:3000'
+      - '${API_PORT}:3000'
     # Bind-mount source, but DON'T hide node_modules from the image:
     volumes:
       - ../..:/workspace:delegated
@@ -46,6 +46,101 @@ services:
     depends_on:
       - postgres
       - datadog-agent
+      # - search-svc
+      - ingest-svc
+      - redis
+      - meilisearch
+      - minio
+
+  ingest-svc:
+    build:
+      context: ../..
+      dockerfile: Dockerfile.dev
+    container_name: nx-arag-ingest
+    working_dir: /workspace
+    command: sh -c "yarn start:ingest"
+    env_file:
+      - ./.env
+      - ../../apps/ingest-svc/.env
+    ports:
+      - '${INGEST_PORT}:3001'
+    volumes:
+      - ../..:/workspace:delegated
+      - ingest-node-modules:/workspace/node_modules
+    labels:
+      com.datadoghq.logs: '[{"service":"nx-arag-ingest","source":"nodejs","env":"${DD_ENV}"}]'
+      com.datadoghq.tags.env: ${DD_ENV}
+      com.datadoghq.tags.service: nx-arag-ingest
+      com.datadoghq.tags.version: ${DD_VERSION}
+    depends_on:
+      - datadog-agent
+      - postgres
+      - redis
+      - minio
+      - meilisearch
+
+  # search-svc:
+  #   build:
+  #     context: ../..
+  #     dockerfile: Dockerfile.dev
+  #   container_name: nx-arag-search
+  #   working_dir: /workspace
+  #   command: >-
+  #     sh -c "yarn tsc -p apps/search-svc/tsconfig.app.json && node dist/apps/search-svc/apps/search-svc/src/main.js"
+  #   env_file:
+  #     - ./.env
+  #     - ../../apps/search-svc/.env
+  #   ports:
+  #     - '50051:50051'
+  #   volumes:
+  #     - ../..:/workspace:delegated
+  #     - search-node-modules:/workspace/node_modules
+  #   labels:
+  #     com.datadoghq.logs: '[{"service":"nx-arag-search","source":"nodejs","env":"${DD_ENV}"}]'
+  #     com.datadoghq.tags.env: ${DD_ENV}
+  #     com.datadoghq.tags.service: nx-arag-search
+  #     com.datadoghq.tags.version: ${DD_VERSION}
+  #   depends_on:
+  #     - datadog-agent
+  #     - postgres
+  #     - meilisearch
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.10.3
+    container_name: nx-arag-meilisearch
+    environment:
+      MEILI_NO_ANALYTICS: 'true'
+      MEILI_MASTER_KEY: ${MEILISEARCH_MASTER_KEY}
+    ports:
+      - '${MEILISEARCH_PORT}:7700'
+    volumes:
+      - meilisearch-data:/meili_data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: nx-arag-redis
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - '${REDIS_PORT}:6379'
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: nx-arag-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_DOMAIN: ''
+    ports:
+      - '${MINIO_PORT}:9000'
+      - '${MINIO_CONSOLE_PORT}:9001'
+    volumes:
+      - minio-data:/data
+    restart: unless-stopped
 
   postgres:
     image: postgres:16-alpine
@@ -65,4 +160,9 @@ services:
 
 volumes:
   api-node-modules:
+  # search-node-modules:
+  ingest-node-modules:
   postgres-data:
+  meilisearch-data:
+  redis-data:
+  minio-data:
