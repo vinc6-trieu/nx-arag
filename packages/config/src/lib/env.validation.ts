@@ -17,10 +17,24 @@ export const envValidationSchema = Joi.object({
   SEARCH_SERVICE_GRPC_URL: Joi.string()
     .pattern(/^[^:]+:\d+$/)
     .default('127.0.0.1:50051'),
+  INGEST_SERVICE_GRPC_URL: Joi.string()
+    .pattern(/^[^:]+:\d+$/)
+    .default('127.0.0.1:50052'),
   CACHE_TTL_SECONDS: Joi.number().integer().min(1).default(300),
   CACHE_MAX_ITEMS: Joi.number().integer().min(1).default(1000),
   RATE_LIMIT_MAX: Joi.number().integer().min(1).default(100),
   RATE_LIMIT_WINDOW_MS: Joi.number().integer().min(1).default(60000),
+  UPLOAD_MAX_FILE_SIZE_BYTES: Joi.number()
+    .integer()
+    .min(1)
+    .default(25 * 1024 * 1024),
+  S3_ENDPOINT: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .default('http://127.0.0.1:9000'),
+  S3_REGION: Joi.string().default('us-east-1'),
+  S3_ACCESS_KEY_ID: Joi.string().allow('').optional(),
+  S3_SECRET_ACCESS_KEY: Joi.string().allow('').optional(),
+  S3_BUCKET_SOURCE: Joi.string().default('documents'),
   DD_ENV: Joi.string().default(Joi.ref('NODE_ENV')),
   DD_SERVICE: Joi.string().default('nx-arag-api'),
   DD_VERSION: Joi.string().default('local'),

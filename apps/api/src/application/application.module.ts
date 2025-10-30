@@ -8,6 +8,10 @@ import { RegisterUseCase } from './use-cases/auth/register.use-case';
 import { UpdateProfileUseCase } from './use-cases/auth/update-profile.use-case';
 import { SearchDocumentsUseCase } from './use-cases/search/search-documents.use-case';
 import { SearchHealthUseCase } from './use-cases/search/search-health.use-case';
+import { SubmitDocumentUseCase } from './use-cases/ingest/submit-document.use-case';
+import { GetIngestJobStatusUseCase } from './use-cases/ingest/get-ingest-job-status.use-case';
+import { IngestHealthUseCase } from './use-cases/ingest/ingest-health.use-case';
+import { UploadDocumentSourceUseCase } from './use-cases/ingest/upload-document-source.use-case';
 
 @Module({
   imports: [
@@ -29,6 +33,10 @@ import { SearchHealthUseCase } from './use-cases/search/search-health.use-case';
     UpdateProfileUseCase,
     SearchDocumentsUseCase,
     SearchHealthUseCase,
+    SubmitDocumentUseCase,
+    GetIngestJobStatusUseCase,
+    IngestHealthUseCase,
+    UploadDocumentSourceUseCase,
   ],
   exports: [
     LoginUseCase,
@@ -37,6 +45,10 @@ import { SearchHealthUseCase } from './use-cases/search/search-health.use-case';
     UpdateProfileUseCase,
     SearchDocumentsUseCase,
     SearchHealthUseCase,
+    SubmitDocumentUseCase,
+    GetIngestJobStatusUseCase,
+    IngestHealthUseCase,
+    UploadDocumentSourceUseCase,
   ],
 })
 export class ApplicationModule {}

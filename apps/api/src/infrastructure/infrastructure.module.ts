@@ -8,9 +8,18 @@ import {
   SearchGrpcService,
   SearchServiceProvider,
 } from './services/search-grpc.service';
+import {
+  IngestGrpcClientModule,
+  IngestGrpcService,
+  IngestServiceProvider,
+} from './services/ingest-grpc.service';
+import {
+  OBJECT_STORAGE_SERVICE,
+} from '../domain/services/object-storage.service.interface';
+import { ObjectStorageService } from './services/object-storage.service';
 
 @Module({
-  imports: [SearchGrpcClientModule],
+  imports: [SearchGrpcClientModule, IngestGrpcClientModule],
   providers: [
     // Repository Implementations
     UserRepositoryImpl,
@@ -23,6 +32,13 @@ import {
     ExternalAuthService,
     SearchGrpcService,
     SearchServiceProvider,
+    IngestGrpcService,
+    IngestServiceProvider,
+    ObjectStorageService,
+    {
+      provide: OBJECT_STORAGE_SERVICE,
+      useExisting: ObjectStorageService,
+    },
 
     // Infrastructure Services
     PrismaService,
@@ -33,6 +49,10 @@ import {
     PrismaService,
     SearchGrpcService,
     SearchServiceProvider,
+    IngestGrpcService,
+    IngestServiceProvider,
+    ObjectStorageService,
+    OBJECT_STORAGE_SERVICE,
   ],
 })
 export class InfrastructureModule {}

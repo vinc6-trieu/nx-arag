@@ -63,7 +63,7 @@ services:
       - ./.env
       - ../../apps/ingest-svc/.env
     ports:
-      - '${INGEST_PORT}:3001'
+      - '${INGEST_PORT}:50052'
     volumes:
       - ../..:/workspace:delegated
       - ingest-node-modules:/workspace/node_modules

@@ -14,6 +14,7 @@ import './instrumentation/datadog-metrics';
 import './instrumentation/datadog-tracer';
 
 import helmet from '@fastify/helmet';
+import multipart from '@fastify/multipart';
 import underPressure from '@fastify/under-pressure';
 import { requestIdPlugin } from '@lib/utils';
 import { ValidationPipe } from '@nestjs/common';
@@ -62,7 +63,20 @@ async function bootstrap() {
     }),
   });
 
+  const configService = app.get(ConfigService);
   const fastify = app.getHttpAdapter().getInstance();
+
+  await fastify.register(multipart, {
+    attachFieldsToBody: true,
+    throwFileSizeLimit: true,
+    limits: {
+      fileSize: configService.get<number>(
+        'UPLOAD_MAX_FILE_SIZE_BYTES',
+        25 * 1024 * 1024,
+      ),
+    },
+  });
+
   await fastify.register(requestIdPlugin, {
     // optional tweaks
     headerName: 'X-Request-Id',
@@ -80,7 +94,6 @@ async function bootstrap() {
     }),
   );
 
-  const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3000);
   await app.listen({ port, host: '0.0.0.0' });
 
