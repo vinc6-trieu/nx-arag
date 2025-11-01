@@ -31,7 +31,7 @@ export const envValidationSchema = Joi.object({
   S3_ENDPOINT: Joi.string()
     .uri({ scheme: ['http', 'https'] })
     .default('http://127.0.0.1:9000'),
-  S3_REGION: Joi.string().default('us-east-1'),
+  S3_REGION: Joi.string().default('ap-southeast-1'),
   S3_ACCESS_KEY_ID: Joi.string().allow('').optional(),
   S3_SECRET_ACCESS_KEY: Joi.string().allow('').optional(),
   S3_BUCKET_SOURCE: Joi.string().default('documents'),

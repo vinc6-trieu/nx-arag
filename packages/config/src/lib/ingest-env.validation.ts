@@ -14,13 +14,27 @@ export const ingestEnvValidationSchema = Joi.object({
   INGEST_S3_ENDPOINT: Joi.string()
     .uri({ scheme: ['http', 'https'] })
     .default('http://minio:9000'),
-  INGEST_S3_REGION: Joi.string().default('us-east-1'),
+  INGEST_S3_REGION: Joi.string().default('ap-southeast-1'),
   INGEST_S3_BUCKET_SOURCE: Joi.string().default('documents'),
   INGEST_S3_BUCKET_DERIVATIVES: Joi.string().default('document-derivatives'),
   INGEST_S3_ACCESS_KEY_ID: Joi.string().allow('').optional(),
   INGEST_S3_SECRET_ACCESS_KEY: Joi.string().allow('').optional(),
+  AI_SERVICE_API_KEY: Joi.string().min(1).required(),
   INGEST_EMBED_MODEL: Joi.string().default('text-embedding-3-small'),
-  INGEST_CHUNK_TOKEN_LIMIT: Joi.number().integer().min(50).max(2000).default(500),
+  INGEST_EMBED_API_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .default('https://api.openai.com/v1/embeddings'),
+  INGEST_EMBED_DIMENSIONS: Joi.number().integer().min(8).max(8192).default(1536),
+  INGEST_EMBED_MAX_TOKENS: Joi.number()
+    .integer()
+    .min(100)
+    .max(8192)
+    .default(7000),
+  INGEST_CHUNK_TOKEN_LIMIT: Joi.number()
+    .integer()
+    .min(50)
+    .max(2000)
+    .default(500),
   DD_ENV: Joi.string().default(Joi.ref('NODE_ENV')),
   DD_SERVICE: Joi.string().default('nx-arag-ingest'),
   DD_VERSION: Joi.string().default('local'),

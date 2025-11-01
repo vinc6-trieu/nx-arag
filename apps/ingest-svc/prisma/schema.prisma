@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/prisma/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("INGEST_DATABASE_URL")
+}
+
+model IngestDocument {
+  documentId      String                  @id @map("document_id")
+  tenantId        String?                 @map("tenant_id")
+  requestedBy     String?                 @map("requested_by")
+  title           String
+  contentType     String?                 @map("content_type")
+  visibility      String?
+  retentionPolicy String?                 @map("retention_policy")
+  metadata        Json?
+  sourceUri       String?                 @map("source_uri")
+  sourceBucket    String?                 @map("source_bucket")
+  sourceKey       String?                 @map("source_key")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+
+  chunks          IngestDocumentChunk[]
+
+  @@map("ingest_documents")
+}
+
+model IngestDocumentChunk {
+  documentId String  @map("document_id")
+  chunkId    String  @map("chunk_id")
+  chunkIndex Int     @map("chunk_index")
+  content    String
+  preview    String?
+  tokenCount Int?    @map("token_count")
+  embedding  Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  document IngestDocument @relation(fields: [documentId], references: [documentId], onDelete: Cascade)
+
+  @@id([documentId, chunkId])
+  @@map("ingest_document_chunks")
+  @@index([documentId, chunkIndex], map: "ingest_document_chunks_document_idx")
+}

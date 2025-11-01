@@ -93,6 +93,10 @@ Vector index via IVFFLAT cosine on `chunks(embedding)`.
 
 ## 5. Ingestion Pipeline (`ingest-svc`)
 
+**Current implementation (2025-10):** gRPC service + BullMQ worker that accepts inline uploads or remote URIs (HTTPS, S3, `data:`), persists originals to S3-compatible storage, extracts UTF-8 text, chunks to ~500 tokens, and generates embeddings for downstream indexing.
+
+**Target evolution:**
+
 1. Register → draft document row
 2. Convert/OCR → extract text, tables, images, formulas
 3. DLP scan (Presidio) → redact or flag

@@ -8,7 +8,7 @@ This note compares the current `nx-arag` platform with the target “RAG-Anythin
 
 - **Repo layout:** Nx monorepo with NestJS API (`apps/api`) and gRPC search microservice (`apps/search-svc`), shared packages for DTOs / config / observability glue, Docker-based local stack.
 - **Retrieval pipeline:** `search-svc` returns stubbed BM25/vector hits; no vector store, BM25 engine, or re-ranker is implemented yet.
-- **Ingestion:** No ingestion service exists. Content, embeddings, and chunk metadata are absent.
+- **Ingestion:** `ingest-svc` queues jobs, downloads inline or remote (HTTPS/S3/data URI) sources, extracts text, chunks, embeds, and stores raw sources in S3-compatible storage. Vector indexing and publishing events remain to be wired up.
 - **Knowledge graph:** Not implemented; there is no schema, storage, or builder routine.
 - **Multimodal support:** API and search contracts are text-only today (filters + text query). No image/table/equation ingestion or VLM integration exists.
 - **LLM orchestration:** The API does not yet assemble answers from retrieved contexts; there is no generation pipeline, prompt management, or guardrails beyond the existing architecture sketch in `docs/RAG-Architecture.md`.
@@ -35,7 +35,7 @@ This note compares the current `nx-arag` platform with the target “RAG-Anythin
 
 | Capability | Current Status | Gap | Prerequisites / Notes |
 | ---------- | -------------- | --- | --------------------- |
-| **Ingestion service (`ingest-svc`)** | Not present | Build new service (likely Python + `raganything`) to parse, chunk, embed, emit events | Requires storage targets (S3/MinIO, Postgres+pgvector, Meilisearch), queue for job coordination |
+| **Ingestion service (`ingest-svc`)** | TypeScript worker handles inline/S3/HTTP sources, text extraction, chunking, embeddings | Add advanced parsing (multimodal), derivative storage, and downstream indexing/events | Requires storage targets (S3/MinIO, Postgres+pgvector, Meilisearch), queue for job coordination |
 | **Multimodal asset storage** | Not present | Provision object store and conventions for asset URIs | MinIO/S3, signed URL policy, storage package updates |
 | **Vector store** | Not present | Add pgvector extension, schema, NestJS data access layer | Migrate Postgres, update Prisma/TypeORM client or microservice repository layer |
 | **BM25 engine** | Not present | Add Meilisearch or Elasticsearch, build ingest + search adapters | Docker Compose updates, search service connectors |
@@ -68,4 +68,3 @@ This note compares the current `nx-arag` platform with the target “RAG-Anythin
 - Prepare developer enablement: local seeds, sample documents, minimal tests validating ingestion → retrieval loop.
 
 Once these gaps are closed the repo can begin layering the richer RAG-Anything capabilities (multimodal fusion, KG boosts, VLM-enhanced answers) with confidence.
-

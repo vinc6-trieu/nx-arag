@@ -3,14 +3,12 @@ import {
   S3Client,
   type PutObjectCommandInput,
 } from '@aws-sdk/client-s3';
-import {
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PinoLogger } from 'nestjs-pino';
 import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
+import { URL } from 'node:url';
 import {
   OBJECT_STORAGE_SERVICE,
   type ObjectStorageServicePort,
@@ -32,10 +30,15 @@ export class ObjectStorageService implements ObjectStorageServicePort {
     this.logger.setContext(ObjectStorageService.name);
 
     const endpoint =
-      this.configService.get<string>('S3_ENDPOINT') ??
-      'http://127.0.0.1:9000';
-    const region =
-      this.configService.get<string>('S3_REGION') ?? 'us-east-1';
+      this.configService.get<string>('S3_ENDPOINT') ?? 'http://127.0.0.1:9000';
+    const region = this.resolveRegion(endpoint);
+
+    this.logger.info(
+      {
+        endpoint,
+      },
+      'endpoint',
+    );
 
     this.client = new S3Client({
       endpoint,
@@ -45,8 +48,7 @@ export class ObjectStorageService implements ObjectStorageServicePort {
     });
 
     this.bucketName =
-      this.configService.get<string>('S3_BUCKET_SOURCE') ??
-      'documents';
+      this.configService.get<string>('S3_BUCKET_SOURCE') ?? 'documents';
   }
 
   async uploadDocumentSource(
@@ -65,12 +67,26 @@ export class ObjectStorageService implements ObjectStorageServicePort {
 
     const objectKey = `documents/${documentId}/source.${extension}`;
 
+    this.logger.info(
+      {
+        input,
+      },
+      'input',
+    );
+
     const metadata = this.buildMetadata({
       tenantId: input.tenantId,
       requestedBy: input.requestedBy,
       originalName: input.originalName,
       ...input.metadata,
     });
+
+    this.logger.info(
+      {
+        metadata,
+      },
+      'metadata',
+    );
 
     const putCommandInput: PutObjectCommandInput = {
       Bucket: this.bucketName,
@@ -92,9 +108,7 @@ export class ObjectStorageService implements ObjectStorageServicePort {
         },
         'Failed to upload document source to object storage',
       );
-      throw new InternalServerErrorException(
-        'Failed to store document source',
-      );
+      throw new InternalServerErrorException('Failed to store document source');
     }
 
     return {
@@ -113,8 +127,7 @@ export class ObjectStorageService implements ObjectStorageServicePort {
     const accessKeyId =
       this.configService.get<string>('S3_ACCESS_KEY_ID') ?? '';
     const secretAccessKey =
-      this.configService.get<string>('S3_SECRET_ACCESS_KEY') ??
-      '';
+      this.configService.get<string>('S3_SECRET_ACCESS_KEY') ?? '';
 
     if (!accessKeyId || !secretAccessKey) {
       return undefined;
@@ -124,8 +137,7 @@ export class ObjectStorageService implements ObjectStorageServicePort {
   }
 
   private inferContentType(originalName: string): string | undefined {
-    const extension =
-      this.extractExtensionFromName(originalName) ?? '';
+    const extension = this.extractExtensionFromName(originalName) ?? '';
 
     switch (extension) {
       case 'pdf':
@@ -162,9 +174,7 @@ export class ObjectStorageService implements ObjectStorageServicePort {
     }
   }
 
-  private extractExtensionFromName(
-    originalName: string,
-  ): string | undefined {
+  private extractExtensionFromName(originalName: string): string | undefined {
     const extension = extname(originalName)?.replace('.', '').trim();
     return extension ? extension.toLowerCase() : undefined;
   }
@@ -185,11 +195,7 @@ export class ObjectStorageService implements ObjectStorageServicePort {
   ): Record<string, string> {
     return Object.entries(metadata).reduce<Record<string, string>>(
       (acc, [key, value]) => {
-        if (
-          value === undefined ||
-          value === null ||
-          value === ''
-        ) {
+        if (value === undefined || value === null || value === '') {
           return acc;
         }
 
@@ -198,5 +204,39 @@ export class ObjectStorageService implements ObjectStorageServicePort {
       },
       {},
     );
+  }
+
+  private resolveRegion(endpoint?: string): string {
+    const configuredRegion = this.configService
+      .get<string>('S3_REGION')
+      ?.trim();
+    if (configuredRegion) {
+      return configuredRegion;
+    }
+
+    const derivedRegion = endpoint
+      ? this.extractRegionFromEndpoint(endpoint)
+      : undefined;
+    if (derivedRegion) {
+      return derivedRegion;
+    }
+
+    return 'ap-southeast-1';
+  }
+
+  private extractRegionFromEndpoint(endpoint: string): string | undefined {
+    try {
+      const { hostname } = new URL(endpoint);
+      const match = hostname.match(
+        /^s3[.-](?:dualstack[.-])?([a-z0-9-]+)\.amazonaws\.com$/i,
+      );
+      return match?.[1]?.toLowerCase();
+    } catch (error) {
+      this.logger.debug(
+        { endpoint, error },
+        'Failed to derive S3 region from endpoint; falling back to default',
+      );
+      return undefined;
+    }
   }
 }

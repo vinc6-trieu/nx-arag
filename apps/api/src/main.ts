@@ -67,7 +67,6 @@ async function bootstrap() {
   const fastify = app.getHttpAdapter().getInstance();
 
   await fastify.register(multipart, {
-    attachFieldsToBody: true,
     throwFileSizeLimit: true,
     limits: {
       fileSize: configService.get<number>(

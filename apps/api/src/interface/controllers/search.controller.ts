@@ -1,9 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { SearchRequestDto } from '../../application/dtos/search.dto';
 import { SearchDocumentsUseCase } from '../../application/use-cases/search/search-documents.use-case';
 import { SearchHealthUseCase } from '../../application/use-cases/search/search-health.use-case';

@@ -1,3 +1,4 @@
+import type { Multipart, MultipartFile } from '@fastify/multipart';
 import {
   BadRequestException,
   Body,
@@ -7,15 +8,18 @@ import {
   Post,
   Req,
 } from '@nestjs/common';
-import type { MultipartFile } from '@fastify/multipart';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import type { FastifyRequest } from 'fastify';
-import { SubmitDocumentRequestDto, toIngestDocumentInput } from '../../application/dtos/ingest.dto';
-import { SubmitDocumentUseCase } from '../../application/use-cases/ingest/submit-document.use-case';
+import type { Buffer } from 'node:buffer';
+import {
+  SubmitDocumentRequestDto,
+  toIngestDocumentInput,
+} from '../../application/dtos/ingest.dto';
+import { UploadDocumentRequestDto } from '../../application/dtos/upload.dto';
 import { GetIngestJobStatusUseCase } from '../../application/use-cases/ingest/get-ingest-job-status.use-case';
 import { IngestHealthUseCase } from '../../application/use-cases/ingest/ingest-health.use-case';
-import { UploadDocumentRequestDto } from '../../application/dtos/upload.dto';
+import { SubmitDocumentUseCase } from '../../application/use-cases/ingest/submit-document.use-case';
 import { UploadDocumentSourceUseCase } from '../../application/use-cases/ingest/upload-document-source.use-case';
 
 @Controller('ingest')
@@ -34,18 +38,14 @@ export class IngestController {
   }
 
   @Post('uploads')
-  async uploadDocument(
-    @Req() req: FastifyRequest,
-  ) {
-    const file = await this.getMultipartFile(req);
-    const normalizedBody = this.normalizeMultipartBody(req.body);
-    const dto = await this.validateBody(normalizedBody);
+  async uploadDocument(@Req() req: FastifyRequest) {
+    const { file, fields } = await this.consumeMultipartRequest(req);
+    const dto = await this.validateBody(fields);
 
     const metadata = this.parseMetadata(dto.metadata);
-    const buffer = await file.toBuffer();
 
     return this.uploadDocumentSourceUseCase.execute({
-      buffer,
+      buffer: file.buffer,
       originalName: file.filename,
       mimeType: file.mimetype,
       documentId: dto.documentId,
@@ -65,56 +65,72 @@ export class IngestController {
     return this.ingestHealthUseCase.execute();
   }
 
-  private async getMultipartFile(
-    req: FastifyRequest,
-  ): Promise<MultipartFile> {
-    const fastifyRequest = req as FastifyRequest & {
-      file: () => Promise<MultipartFile | undefined>;
-    };
-
-    const file = await fastifyRequest.file();
-    if (!file) {
-      throw new BadRequestException(
-        'Request is missing required "file" field',
-      );
+  private async consumeMultipartRequest(req: FastifyRequest): Promise<{
+    file: { buffer: Buffer; filename: string; mimetype?: string };
+    fields: Record<string, unknown>;
+  }> {
+    if (typeof req.isMultipart === 'function' && !req.isMultipart()) {
+      throw new BadRequestException('Content-Type must be multipart/form-data');
     }
 
-    return file;
-  }
+    const fields: Record<string, unknown> = {};
+    let fileBuffer: Buffer | undefined;
+    let fileMeta: Pick<MultipartFile, 'filename' | 'mimetype'> | undefined;
 
-  private normalizeMultipartBody(
-    body: FastifyRequest['body'],
-  ): Record<string, unknown> {
-    if (!body || typeof body !== 'object') {
-      return {};
-    }
-
-    return Object.entries(body as Record<string, unknown>).reduce<
-      Record<string, unknown>
-    >((acc, [key, value]) => {
-      if (Array.isArray(value)) {
-        const normalized = value.map((item) =>
-          item && typeof item === 'object' && 'value' in item
-            ? (item as { value: unknown }).value
-            : item,
-        );
-
-        acc[key] = normalized.length > 1 ? normalized : normalized[0];
-        return acc;
+    const parts = (
+      req as FastifyRequest & {
+        parts: () => AsyncIterableIterator<Multipart>;
       }
+    ).parts();
 
-      if (
-        value &&
-        typeof value === 'object' &&
-        !Array.isArray(value) &&
-        'value' in value
-      ) {
-        acc[key] = (value as { value: unknown }).value;
+    for await (const part of parts) {
+      if (part.type === 'file') {
+        const filePart = part as MultipartFile;
+
+        if (filePart.fieldname !== 'file') {
+          filePart.file.resume();
+          continue;
+        }
+
+        if (fileBuffer) {
+          filePart.file.resume();
+          continue;
+        }
+
+        const buffer = await filePart.toBuffer();
+
+        if (!buffer.length) {
+          throw new BadRequestException('Uploaded file is empty');
+        }
+
+        if (filePart.file.truncated) {
+          throw new BadRequestException(
+            'Uploaded file exceeds configured size limit',
+          );
+        }
+
+        fileBuffer = buffer;
+        fileMeta = {
+          filename: filePart.filename ?? 'upload',
+          mimetype: filePart.mimetype,
+        };
       } else {
-        acc[key] = value;
+        fields[part.fieldname] = part.value;
       }
-      return acc;
-    }, {});
+    }
+
+    if (!fileBuffer || !fileMeta) {
+      throw new BadRequestException('Request is missing required "file" field');
+    }
+
+    return {
+      file: {
+        buffer: fileBuffer,
+        filename: fileMeta.filename,
+        mimetype: fileMeta.mimetype,
+      },
+      fields,
+    };
   }
 
   private async validateBody(
@@ -146,14 +162,16 @@ export class IngestController {
 
     try {
       const parsed = JSON.parse(metadata);
-      if (Array.isArray(parsed) || parsed === null || typeof parsed !== 'object') {
+      if (
+        Array.isArray(parsed) ||
+        parsed === null ||
+        typeof parsed !== 'object'
+      ) {
         throw new Error('metadata must be a JSON object');
       }
       return parsed;
     } catch {
-      throw new BadRequestException(
-        'metadata must be valid JSON object',
-      );
+      throw new BadRequestException('metadata must be valid JSON object');
     }
   }
 }

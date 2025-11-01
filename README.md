@@ -25,8 +25,9 @@ Nx monorepo for a Retrieval-Augmented Generation (RAG) reference stack built aro
 ### Ingestion service (gRPC)
 
 1. `cp apps/ingest-svc/.env.example apps/ingest-svc/.env`
-2. `yarn tsc -p apps/ingest-svc/tsconfig.app.json`
-3. `node dist/apps/ingest-svc/apps/ingest-svc/src/main.js`
+2. `yarn dev:ingest`
+
+The ingestion pipeline now accepts either inline uploads or remote sources referenced via HTTPS, S3 URIs (`s3://bucket/key`), or `data:` URIs. Configure credentials/endpoints in `apps/ingest-svc/.env` (`INGEST_S3_*`) so the worker can download and persist remote documents.
 
 ### Docker Compose stack (API + ingest/search services + data stores)
 
@@ -40,7 +41,8 @@ The compose stack uses `Dockerfile.dev`, which pre-installs dependencies, genera
 
 ### Useful scripts
 
-- `yarn db:generate:api` – regenerate the Prisma client
+- `yarn db:generate:api` – regenerate the API Prisma client
+- `yarn db:generate:ingest` – regenerate the ingest Prisma client
 - `yarn lint` / `yarn test` – workspace linting and tests via Nx
 - `yarn affected:<target>` – target-specific Nx runs between `origin/main` and the current branch
 

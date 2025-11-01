@@ -21,6 +21,10 @@
     "db:reset:api": "yarn nx run api:prisma-reset --force",
     "db:deploy:api": "yarn nx run api:prisma-deploy",
     "db:generate:api": "yarn nx run api:prisma-generate",
+    "db:migrate:ingest": "yarn nx run ingest-svc:prisma-migrate",
+    "db:reset:ingest": "yarn nx run ingest-svc:prisma-reset --force",
+    "db:deploy:ingest": "yarn nx run ingest-svc:prisma-deploy",
+    "db:generate:ingest": "yarn nx run ingest-svc:prisma-generate",
     "affected:lint": "yarn nx affected --target=lint     --base=origin/main",
     "affected:test": "yarn nx affected --target=test     --base=origin/main",
     "affected:build": "yarn nx affected --target=build    --base=origin/main"

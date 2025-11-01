@@ -4,8 +4,8 @@ nx-arag/
 │ │  └─ src/…          # domain/application/interface/instrumentation
 │ ├─ search-svc/       # gRPC retrieval service (BM25/vector stub)
 │ │  └─ src/…          # core gRPC handlers, instrumentation
-│ └─ ingest-svc/       # gRPC ingestion orchestrator (stubbed pipeline)
-│    └─ src/…          # queue intake + instrumentation
+│ └─ ingest-svc/       # gRPC ingestion orchestrator (inline + remote URI support)
+│    └─ src/…          # queue intake, worker, instrumentation
 │
 ├─ packages/
 │ ├─ shared/           # Cross-service contracts, CASL setup, DTOs
